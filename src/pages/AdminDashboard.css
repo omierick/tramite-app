@@ -319,3 +319,37 @@
   border: 1px solid #ccc;
   border-radius: 8px;
 }
+
+
+.acciones-tramite {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-editar, .btn-eliminar {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-editar {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-editar:hover {
+  background-color: #138496;
+}
+
+.btn-eliminar {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-eliminar:hover {
+  background-color: #c82333;
+}

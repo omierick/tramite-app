@@ -16,85 +16,88 @@ export const TramitesProvider = ({ children }) => {
 
   const fetchTramites = async () => {
     const { data, error } = await supabase
-      .from('tramites')
-      .select('*');
+      .from("tramites")
+      .select("*")
+      .order("createdAt", { ascending: false });
 
     if (error) {
-      console.error("Error obteniendo trámites:", error);
+      console.error("Error cargando trámites:", error);
     } else {
-      setTramites(data);
+      setTramites(data || []);
     }
   };
 
   const fetchTiposTramite = async () => {
     const { data, error } = await supabase
-      .from('tipos_tramite')
-      .select('*');
+      .from("tipos_tramite")
+      .select("*")
+      .order("nombre", { ascending: true });
 
     if (error) {
-      console.error("Error obteniendo tipos de trámite:", error);
+      console.error("Error cargando tipos de trámite:", error);
     } else {
-      setTiposTramite(data);
+      setTiposTramite(data || []);
     }
   };
 
   const addTramite = async (nuevoTramite) => {
     const { data, error } = await supabase
-      .from('tramites')
-      .insert([{
-        tipo: nuevoTramite.tipo,
-        campos: nuevoTramite.campos,
-        estado: 'Pendiente',
+      .from("tramites")
+      .insert({
+        ...nuevoTramite,
         createdAt: new Date().toISOString(),
-        reviewedAt: null
-      }]);
+      })
+      .select();
 
     if (error) {
       console.error("Error creando trámite:", error);
-    } else {
-      setTramites(prev => [...prev, data[0]]);
+    } else if (data && data.length > 0) {
+      setTramites(prev => [data[0], ...prev]);
     }
   };
 
-  const addTipoTramite = async (nuevoTipo) => {
+  const addTipoTramite = async (tipo) => {
     const { data, error } = await supabase
-      .from('tipos_tramite')
-      .insert([{
-        nombre: nuevoTipo.nombre,
-        campos: nuevoTipo.campos
-      }]);
+      .from("tipos_tramite")
+      .insert(tipo)
+      .select();
 
     if (error) {
       console.error("Error creando tipo de trámite:", error);
-    } else {
+    } else if (data && data.length > 0) {
       setTiposTramite(prev => [...prev, data[0]]);
     }
   };
 
   const updateTramiteEstado = async (id, nuevoEstado) => {
-    const { error } = await supabase
-      .from('tramites')
+    const { data, error } = await supabase
+      .from("tramites")
       .update({
         estado: nuevoEstado,
-        reviewedAt: new Date().toISOString()
+        reviewedAt: new Date().toISOString(),
       })
-      .eq('id', id);
+      .eq("id", id)
+      .select();
 
     if (error) {
-      console.error("Error actualizando trámite:", error);
-    } else {
-      fetchTramites();
+      console.error("Error actualizando estado de trámite:", error);
+    } else if (data && data.length > 0) {
+      setTramites(prev =>
+        prev.map(t => (t.id === id ? { ...t, ...data[0] } : t))
+      );
     }
   };
 
   return (
-    <TramitesContext.Provider value={{
-      tramites,
-      tiposTramite,
-      addTramite,
-      addTipoTramite,
-      updateTramiteEstado
-    }}>
+    <TramitesContext.Provider
+      value={{
+        tramites,
+        tiposTramite,
+        addTramite,
+        addTipoTramite,
+        updateTramiteEstado,
+      }}
+    >
       {children}
     </TramitesContext.Provider>
   );

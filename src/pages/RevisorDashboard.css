@@ -1,6 +1,6 @@
 .revisor-container {
   padding: 30px;
-  background-color: #f4f4f4;
+  background-color: #f5f7fa;
   min-height: 100vh;
 }
 
@@ -10,16 +10,23 @@
   border-collapse: collapse;
   background: #ffffff;
   margin-top: 20px;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .tabla-revisor th,
 .tabla-revisor td {
-  padding: 12px;
+  padding: 12px 15px;
   border-bottom: 1px solid #ddd;
   text-align: center;
+  font-size: 14px;
+}
+
+.tabla-revisor th {
+  background-color: #007bff;
+  color: white;
+  text-transform: uppercase;
 }
 
 /* Estados */
@@ -42,21 +49,36 @@
 .acciones {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* Botones */
+.btn-ver,
+.btn-aprobar,
+.btn-rechazar,
+.btn-descargar {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-ver {
+  background-color: #17a2b8;
+  color: white;
+}
+.btn-ver:hover {
+  background-color: #138496;
+}
+
 .btn-aprobar {
   background-color: #28a745;
   color: white;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s;
 }
-
 .btn-aprobar:hover {
   background-color: #218838;
 }
@@ -64,16 +86,17 @@
 .btn-rechazar {
   background-color: #dc3545;
   color: white;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s;
 }
-
 .btn-rechazar:hover {
   background-color: #c82333;
+}
+
+.btn-descargar {
+  background-color: #6c757d;
+  color: white;
+}
+.btn-descargar:hover {
+  background-color: #5a6268;
 }
 
 /* Modal Vista Previa */
@@ -94,53 +117,40 @@
   background: white;
   padding: 30px;
   border-radius: 10px;
-  width: 500px;
+  width: 90%;
+  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  text-align: left;
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  animation: fadeIn 0.4s ease;
+  animation: fadeIn 0.3s ease-in-out;
+  text-align: left;
 }
 
 .campos-container p {
-  margin-bottom: 10px;
+  margin: 8px 0;
+  font-size: 14px;
 }
 
-/* Botón Cerrar */
+/* Botón cerrar */
 .btn-cerrar {
-  background-color: #6c757d;
+  background-color: #343a40;
   color: white;
+  padding: 10px;
   border: none;
-  padding: 10px 20px;
+  width: 100%;
   margin-top: 20px;
   border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  font-weight: bold;
-}
-
-.btn-cerrar:hover {
-  background-color: #5a6268;
-}
-
-/* Botón Ver Detalles */
-.btn-ver {
-  background-color: #17a2b8;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 
-.btn-ver:hover {
-  background-color: #138496;
+.btn-cerrar:hover {
+  background-color: #23272b;
 }
 
-/* Animación Fade In */
+/* Animación */
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

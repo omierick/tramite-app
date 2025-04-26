@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
+import FirmaCanvas from "../components/FirmaCanvas";
 import { toast } from 'react-toastify';
 import { enviarCorreoNotificacion } from "../services/emailService";
 import "./UserDashboard.css";
@@ -10,6 +11,7 @@ const UserDashboard = () => {
   const [tramiteSeleccionadoId, setTramiteSeleccionadoId] = useState('');
   const [selected, setSelected] = useState(null);
   const [formData, setFormData] = useState({});
+  const [firma, setFirma] = useState(null);
   const [enviado, setEnviado] = useState(false);
 
   const handleSelectChange = (e) => {
@@ -35,16 +37,23 @@ const UserDashboard = () => {
     setFormData({ ...formData, [campo]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!firma) {
+      toast.error("Por favor guarda tu firma antes de enviar.");
+      return;
+    }
 
     const nuevoTramite = {
       tipo: selected.nombre,
       campos: formData,
-      estado: "Pendiente"
+      firma: firma, // 🔥
+      estado: "Pendiente",
+      createdAt: new Date().toISOString() // 📅
     };
 
-    addTramite(nuevoTramite);
+    await addTramite(nuevoTramite);
 
     enviarCorreoNotificacion({
       nombreSolicitante: formData["Nombre del solicitante"] || "No especificado",
@@ -54,12 +63,12 @@ const UserDashboard = () => {
         .join("\n")
     })
     .then(() => {
-      console.log('Correo enviado con éxito.');
-      toast.success("Trámite creado y correo enviado exitosamente");
+      console.log('Correo enviado.');
+      toast.success("Trámite enviado correctamente.");
     })
     .catch((error) => {
-      console.error('Error al enviar el correo:', error);
-      toast.error("Trámite creado, pero hubo un error al enviar el correo");
+      console.error('Error enviando correo:', error);
+      toast.error("Trámite enviado pero hubo un error enviando el correo.");
     });
 
     setEnviado(true);
@@ -68,6 +77,7 @@ const UserDashboard = () => {
   const resetFormulario = () => {
     setEnviado(false);
     setSelected(null);
+    setFirma(null);
     setTramiteSeleccionadoId('');
     setFormData({});
   };
@@ -81,7 +91,6 @@ const UserDashboard = () => {
         {enviado ? (
           <div className="success-message">
             <h3>¡Trámite enviado exitosamente!</h3>
-            <p>Gracias por completar tu trámite.</p>
             <button className="btn-primary" onClick={resetFormulario}>
               Realizar otro trámite
             </button>
@@ -104,6 +113,7 @@ const UserDashboard = () => {
         ) : (
           <form className="tramite-form" onSubmit={handleSubmit}>
             <h3>Iniciar Trámite: {selected.nombre}</h3>
+
             {selected.campos.map((campo, idx) => (
               <div key={idx} className="form-group">
                 <label>{campo}:</label>
@@ -115,35 +125,14 @@ const UserDashboard = () => {
                 />
               </div>
             ))}
+
+            <div className="form-group">
+              <label>Firma del solicitante:</label>
+              <FirmaCanvas setFirma={setFirma} />
+            </div>
+
             <button className="btn-primary" type="submit">Enviar Trámite</button>
           </form>
-        )}
-
-        {/* Lista de trámites enviados */}
-        {tramites.length > 0 && (
-          <div className="mis-tramites">
-            <h3>Mis Trámites Enviados</h3>
-            <table className="tabla-tramites">
-              <thead>
-                <tr>
-                  <th>Tipo de Trámite</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tramites.map((tramite, idx) => (
-                  <tr key={idx}>
-                    <td>{tramite.tipo}</td>
-                    <td className={`estado ${tramite.estado.toLowerCase()}`}>
-                      {tramite.estado === "Pendiente" && "⏳ Pendiente"}
-                      {tramite.estado === "Aprobado" && "✅ Aprobado"}
-                      {tramite.estado === "Rechazado" && "❌ Rechazado"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         )}
       </div>
     </>

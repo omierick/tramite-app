@@ -94,7 +94,7 @@ const AdminDashboard = () => {
 
         {/* Dashboard completo que se exporta */}
         <div ref={dashboardRef}>
-          
+
           {/* Dashboard Numérico */}
           <div className="dashboard-grid">
             <div className="card-dashboard">
@@ -189,6 +189,31 @@ const AdminDashboard = () => {
                   <li key={idx}>{campo}</li>
                 ))}
               </ul>
+
+              <div className="acciones-tramite">
+                <button
+                  className="btn-editar"
+                  onClick={() => {
+                    const nuevoNombre = prompt("Nuevo nombre para el trámite:", tipo.nombre);
+                    if (nuevoNombre) {
+                      updateTipoTramite(tipo.id, { nombre: nuevoNombre });
+                    }
+                  }}
+                >
+                  ✏️ Editar
+                </button>
+
+                <button
+                  className="btn-eliminar"
+                  onClick={() => {
+                    if (confirm("¿Seguro que deseas eliminar este tipo de trámite?")) {
+                      deleteTipoTramite(tipo.id);
+                    }
+                  }}
+                >
+                  ❌ Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
