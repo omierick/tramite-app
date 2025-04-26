@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "../services/supabaseClient";
 
 const TramitesContext = createContext();
 
@@ -9,53 +10,91 @@ export const TramitesProvider = ({ children }) => {
   const [tiposTramite, setTiposTramite] = useState([]);
 
   useEffect(() => {
-    const storedTramites = localStorage.getItem("tramites");
-    const storedTipos = localStorage.getItem("tiposTramite");
-    if (storedTramites) setTramites(JSON.parse(storedTramites));
-    if (storedTipos) setTiposTramite(JSON.parse(storedTipos));
+    fetchTramites();
+    fetchTiposTramite();
   }, []);
 
-  const addTramite = (tramite) => {
-    const newTramite = {
-      ...tramite,
-      createdAt: new Date().toISOString(), // Guardamos fecha de creación
-      estado: "Pendiente",
-    };
-    const updated = [...tramites, newTramite];
-    setTramites(updated);
-    localStorage.setItem("tramites", JSON.stringify(updated));
+  const fetchTramites = async () => {
+    const { data, error } = await supabase
+      .from('tramites')
+      .select('*');
+
+    if (error) {
+      console.error("Error obteniendo trámites:", error);
+    } else {
+      setTramites(data);
+    }
   };
 
-  const addTipoTramite = (tipo) => {
-    const updated = [...tiposTramite, tipo];
-    setTiposTramite(updated);
-    localStorage.setItem("tiposTramite", JSON.stringify(updated));
+  const fetchTiposTramite = async () => {
+    const { data, error } = await supabase
+      .from('tipos_tramite')
+      .select('*');
+
+    if (error) {
+      console.error("Error obteniendo tipos de trámite:", error);
+    } else {
+      setTiposTramite(data);
+    }
   };
 
-  const updateTramiteEstado = (index, nuevoEstado) => {
-    const updated = [...tramites];
-    updated[index].estado = nuevoEstado;
-    updated[index].reviewedAt = new Date().toISOString(); // Guardamos fecha de revisión
-    setTramites(updated);
-    localStorage.setItem("tramites", JSON.stringify(updated));
+  const addTramite = async (nuevoTramite) => {
+    const { data, error } = await supabase
+      .from('tramites')
+      .insert([{
+        tipo: nuevoTramite.tipo,
+        campos: nuevoTramite.campos,
+        estado: 'Pendiente',
+        createdAt: new Date().toISOString(),
+        reviewedAt: null
+      }]);
+
+    if (error) {
+      console.error("Error creando trámite:", error);
+    } else {
+      setTramites(prev => [...prev, data[0]]);
+    }
   };
 
-  const updateTipoTramite = (id, updatedTipo) => {
-    const updated = tiposTramite.map((tipo) =>
-      tipo.id === id ? updatedTipo : tipo
-    );
-    setTiposTramite(updated);
-    localStorage.setItem("tiposTramite", JSON.stringify(updated));
+  const addTipoTramite = async (nuevoTipo) => {
+    const { data, error } = await supabase
+      .from('tipos_tramite')
+      .insert([{
+        nombre: nuevoTipo.nombre,
+        campos: nuevoTipo.campos
+      }]);
+
+    if (error) {
+      console.error("Error creando tipo de trámite:", error);
+    } else {
+      setTiposTramite(prev => [...prev, data[0]]);
+    }
   };
 
-  const deleteTipoTramite = (id) => {
-    const updated = tiposTramite.filter((tipo) => tipo.id !== id);
-    setTiposTramite(updated);
-    localStorage.setItem("tiposTramite", JSON.stringify(updated));
+  const updateTramiteEstado = async (id, nuevoEstado) => {
+    const { error } = await supabase
+      .from('tramites')
+      .update({
+        estado: nuevoEstado,
+        reviewedAt: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error actualizando trámite:", error);
+    } else {
+      fetchTramites();
+    }
   };
 
   return (
-    <TramitesContext.Provider value={{ tramites, tiposTramite, addTramite, addTipoTramite, updateTramiteEstado }}>
+    <TramitesContext.Provider value={{
+      tramites,
+      tiposTramite,
+      addTramite,
+      addTipoTramite,
+      updateTramiteEstado
+    }}>
       {children}
     </TramitesContext.Provider>
   );
