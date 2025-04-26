@@ -1,0 +1,125 @@
+.user-container {
+  padding: 30px;
+  background-color: #f4f4f4;
+  min-height: 100vh;
+}
+
+/* Formulario de creación */
+.tramite-form {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 600px;
+  margin: 0 auto 40px auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  font-size: 16px;
+}
+
+.btn-primary {
+  background-color: #007BFF;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Pantalla de éxito */
+.success-message {
+  background: #d4edda;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  color: #155724;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.success-message h3 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.success-message p {
+  margin-bottom: 20px;
+}
+
+/* Animación Fade In */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Tabla de trámites enviados */
+.mis-tramites {
+  margin-top: 40px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tabla-tramites {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.tabla-tramites th,
+.tabla-tramites td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+/* Colores según estado */
+.estado.pendiente {
+  color: #ff9800; /* naranja */
+  font-weight: bold;
+}
+
+.estado.aprobado {
+  color: #28a745; /* verde */
+  font-weight: bold;
+}
+
+.estado.rechazado {
+  color: #dc3545; /* rojo */
+  font-weight: bold;
+}

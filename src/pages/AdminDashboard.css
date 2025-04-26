@@ -1,0 +1,321 @@
+/* Contenedor principal */
+.admin-container {
+  padding: 30px;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+}
+
+/* Formulario de creación y edición */
+.form-crear {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  max-width: 600px;
+}
+
+/* Grupos de inputs */
+.form-group {
+  margin-bottom: 15px;
+}
+
+/* Inputs */
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* Botones principales */
+.btn-primary, .btn-secondary {
+  margin-top: 10px;
+  display: inline-block;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+/* Botón Crear o Actualizar */
+.btn-primary {
+  background-color: #007BFF;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+/* Botón Agregar Campo */
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Listado de campos agregados */
+.campos-preview {
+  margin-top: 15px;
+}
+
+/* Campo individual con botón de eliminar */
+.campo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+/* Botón eliminar campo */
+.btn-eliminar {
+  background: transparent;
+  border: none;
+  color: red;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Divider */
+.divider {
+  margin: 40px 0;
+}
+
+/* Cards de trámites existentes */
+.tramites-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.tramite-card {
+  background: #ffffff;
+  padding: 20px;
+  width: 250px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Botones de acción en cards */
+.acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Botón Editar */
+.btn-editar {
+  background-color: #17a2b8;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-editar:hover {
+  background-color: #138496;
+}
+
+/* Botón Eliminar */
+.btn-rechazar {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-rechazar:hover {
+  background-color: #c82333;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.card-dashboard {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card-dashboard h3 {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #333;
+}
+
+.card-dashboard p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #007BFF;
+}
+.visual-dashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+@media (min-width: 768px) {
+  .visual-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.charts-dashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+}
+
+@media (min-width: 768px) {
+  .charts-dashboard {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.chart-box {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.chart-box h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.heatmap-container {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 800px; /* Limita el tamaño máximo */
+  margin: 0 auto; /* Centrado */
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-week {
+  margin: 2px;
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-week rect {
+  rx: 4px; /* esquinas redondeadas */
+  ry: 4px;
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-weekday {
+  font-size: 8px;
+}
+
+.react-calendar-heatmap text {
+  font-size: 10px;
+  fill: #555;
+}
+
+.color-empty { fill: #eeeeee; }
+.color-scale-1 { fill: #c6e48b; }
+.color-scale-2 { fill: #7bc96f; }
+.color-scale-3 { fill: #239a3b; }
+.color-scale-4 { fill: #196127; }
+.exportar-container {
+  margin-bottom: 20px;
+  text-align: right;
+}
+
+.btn-exportar {
+  background-color: #6f42c1;
+  color: white;
+  padding: 10px 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-exportar:hover {
+  background-color: #5936a2;
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Aplicar animación a las tarjetas de Dashboard */
+.chart-box,
+.heatmap-container,
+.card-dashboard {
+  animation: fadeInUp 0.8s ease forwards;
+  opacity: 0; /* Para que inicialmente estén invisibles */
+}
+
+/* Opcional: retraso entre tarjetas para efecto en cascada */
+.card-dashboard:nth-child(1) { animation-delay: 0.1s; }
+.card-dashboard:nth-child(2) { animation-delay: 0.2s; }
+.card-dashboard:nth-child(3) { animation-delay: 0.3s; }
+.card-dashboard:nth-child(4) { animation-delay: 0.4s; }
+.card-dashboard:nth-child(5) { animation-delay: 0.5s; }
+.card-dashboard:nth-child(6) { animation-delay: 0.6s; }
+
+.chart-box:nth-child(1) { animation-delay: 0.7s; }
+.chart-box:nth-child(2) { animation-delay: 0.8s; }
+.heatmap-container { animation-delay: 0.9s; }
+
+.filter-dates {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.filter-dates label {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.filter-dates input[type="month"] {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.filter-dates select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
