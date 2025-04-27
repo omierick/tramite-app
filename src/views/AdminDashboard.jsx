@@ -1,10 +1,13 @@
-// src/views/AdminDashboard.jsx
+import { lazy, Suspense } from "react";
 import { useState, useRef } from "react";
-import ReactPaginate from "react-paginate";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
-import ChartsDashboard from "../components/ChartsDashboard";
-import HeatmapDashboard from "../components/HeatmapDashboard";
+import DashboardHeader from "./AdminDashboard/DashboardHeader";
+import DashboardCards from "./AdminDashboard/DashboardCards";
+import DashboardCharts from "./AdminDashboard/DashboardCharts";
+import CrearTramiteForm from "./AdminDashboard/CrearTramiteForm";
+import TramitesTable from "./AdminDashboard/TramitesTable";
+import TiposTramiteGrid from "./AdminDashboard/TiposTramiteGrid";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./AdminDashboard.css";
@@ -35,12 +38,10 @@ const AdminDashboard = () => {
       .filter(t => t.reviewedAt)
       .map(t => (new Date(t.reviewedAt) - new Date(t.createdAt)) / (1000 * 60));
     if (tiempos.length === 0) return "-";
-
     const total = tiempos.reduce((a, b) => a + b, 0);
     const promedio = total / tiempos.length;
     const horas = Math.floor(promedio / 60);
     const minutos = Math.floor(promedio % 60);
-
     return `${horas}h ${minutos}m`;
   };
 
@@ -67,7 +68,7 @@ const AdminDashboard = () => {
   const handleCrearTramite = () => {
     if (nombreTramite.trim() && campos.length > 0) {
       addTipoTramite({
-        id: Date.now(),
+        id: uuidv4(),
         nombre: nombreTramite,
         campos: campos,
       });
@@ -97,150 +98,54 @@ const AdminDashboard = () => {
     <>
       <Navbar />
       <div className="admin-container">
-        <h2>Panel de Administración</h2>
-
-        <div className="exportar-container">
-          <button className="btn-exportar" onClick={handleExportDashboard}>
-            📥 Exportar Dashboard
-          </button>
-        </div>
-
+        <DashboardHeader onExportDashboard={handleExportDashboard} />
         <div ref={dashboardRef}>
-          <div className="dashboard-grid">
-            <div className="card-dashboard"><h3>Total Trámites</h3><p>{totalTramites}</p></div>
-            <div className="card-dashboard"><h3>Pendientes</h3><p>{pendientes}</p></div>
-            <div className="card-dashboard"><h3>Aprobados</h3><p>{aprobados}</p></div>
-            <div className="card-dashboard"><h3>Rechazados</h3><p>{rechazados}</p></div>
-            <div className="card-dashboard"><h3>Tiempo Promedio Resolución</h3><p>{promedioTiempo()}</p></div>
-            <div className="card-dashboard"><h3>Trámites Hoy</h3><p>{tramitesHoy}</p></div>
-          </div>
-
-          <div className="visual-dashboard">
-            <ChartsDashboard pendientes={pendientes} aprobados={aprobados} rechazados={rechazados} />
-            <HeatmapDashboard tramites={tramites} />
-          </div>
-        </div>
-
-        <hr className="divider" />
-
-        <h2>Crear Nuevo Tipo de Trámite</h2>
-
-        <div className="form-crear">
-          <div className="form-group">
-            <label>Nombre del Trámite:</label>
-            <input
-              type="text"
-              value={nombreTramite}
-              onChange={(e) => setNombreTramite(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Nuevo Campo:</label>
-            <input
-              type="text"
-              value={campoNuevo}
-              onChange={(e) => setCampoNuevo(e.target.value)}
-            />
-            <button className="btn-secondary" type="button" onClick={handleAddCampo}>
-              Agregar Campo
-            </button>
-          </div>
-
-          {campos.length > 0 && (
-            <div className="campos-preview">
-              <h4>Campos agregados:</h4>
-              <ul>
-                {campos.map((campo, idx) => (
-                  <li key={idx}>{campo}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <button className="btn-primary" type="button" onClick={handleCrearTramite}>
-            Crear Trámite
-          </button>
-        </div>
-
-        <hr className="divider" />
-
-        <h2>Lista de Trámites Recibidos</h2>
-        <div className="tabla-container">
-          <table className="tabla-admin">
-            <thead>
-              <tr>
-                <th>Tipo de Trámite</th>
-                <th>Solicitante</th>
-                <th>Estado</th>
-                <th>Fecha de Creación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayTramites.map((tramite) => (
-                <tr key={tramite.id}>
-                  <td>{tramite.tipo}</td>
-                  <td>{tramite.solicitante || "No especificado"}</td>
-                  <td className={`estado ${tramite.estado?.toLowerCase() || ''}`}>
-                    {tramite.estado || "Desconocido"}
-                  </td>
-                  <td>{tramite.createdAt ? new Date(tramite.createdAt).toLocaleString() : "Sin fecha"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <ReactPaginate
-            previousLabel={"← Anterior"}
-            nextLabel={"Siguiente →"}
-            pageCount={Math.ceil(tramites.length / itemsPerPage)}
-            onPageChange={handlePageChange}
-            containerClassName={"pagination"}
-            activeClassName={"active-page"}
-            disabledClassName={"disabled-page"}
+          <DashboardCards
+            total={totalTramites}
+            pendientes={pendientes}
+            aprobados={aprobados}
+            rechazados={rechazados}
+            promedioTiempo={promedioTiempo()}
+            tramitesHoy={tramitesHoy}
+          />
+          <DashboardCharts
+            pendientes={pendientes}
+            aprobados={aprobados}
+            rechazados={rechazados}
+            tramites={tramites}
           />
         </div>
 
+        <hr className="divider" />
+        <h2>Crear Nuevo Tipo de Trámite</h2>
+
+        <CrearTramiteForm
+          nombreTramite={nombreTramite}
+          setNombreTramite={setNombreTramite}
+          campoNuevo={campoNuevo}
+          setCampoNuevo={setCampoNuevo}
+          campos={campos}
+          handleAddCampo={handleAddCampo}
+          handleCrearTramite={handleCrearTramite}
+        />
+
+        <hr className="divider" />
+        <h2>Lista de Trámites Recibidos</h2>
+
+        <TramitesTable
+          tramites={tramites}
+          displayTramites={displayTramites}
+          handlePageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+        />
+
         <h2>Tipos de Trámite Existentes</h2>
-        <div className="tramites-grid">
-          {tiposTramite.map((tipo) => (
-            <div key={tipo.id} className="tramite-card">
-              <h3>{tipo.nombre}</h3>
-              <p><strong>Campos:</strong></p>
-              <ul>
-                {tipo.campos.map((campo, idx) => (
-                  <li key={idx}>{campo}</li>
-                ))}
-              </ul>
 
-              <div className="acciones-tramite">
-                <button
-                  className="btn-editar"
-                  onClick={() => {
-                    const nuevoNombre = prompt("Nuevo nombre para el trámite:", tipo.nombre);
-                    if (nuevoNombre) {
-                      updateTipoTramite(tipo.id, { nombre: nuevoNombre });
-                    }
-                  }}
-                >
-                  ✏️ Editar
-                </button>
-
-                <button
-                  className="btn-eliminar"
-                  onClick={() => {
-                    if (confirm("¿Seguro que deseas eliminar este tipo de trámite?")) {
-                      deleteTipoTramite(tipo.id);
-                    }
-                  }}
-                >
-                  ❌ Eliminar
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
+        <TiposTramiteGrid
+          tiposTramite={tiposTramite}
+          updateTipoTramite={updateTipoTramite}
+          deleteTipoTramite={deleteTipoTramite}
+        />
       </div>
     </>
   );
