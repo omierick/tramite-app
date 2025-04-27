@@ -1,12 +1,13 @@
 // src/pages/UserDashboard.jsx
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
 import FirmaCanvas from "../components/FirmaCanvas";
 import { toast } from "react-toastify";
 import "./UserDashboard.css";
+import { sendTramiteEmail } from "../services/emailService";
 
-const UserDashboard= ({ setRole }) => { 
+const UserDashboard = ({ setRole }) => {
   const {
     tramites,
     tiposTramite,
@@ -25,6 +26,16 @@ const UserDashboard= ({ setRole }) => {
   const handleSelectChange = (e) => {
     setTramiteSeleccionadoId(e.target.value);
   };
+
+
+  useEffect(() => {
+    if (!nombreUsuario && tramites.length > 0) {
+      const tramiteConNombre = tramites.find(t => t.solicitante);
+      if (tramiteConNombre) {
+        setNombreUsuario(tramiteConNombre.solicitante);
+      }
+    }
+  }, [nombreUsuario, tramites]);
 
   const handleSelectSubmit = (e) => {
     e.preventDefault();
@@ -47,31 +58,39 @@ const UserDashboard= ({ setRole }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!nombreUsuario) {
       toast.error("Debes ingresar tu nombre antes de enviar un trámite.");
       return;
     }
-
+  
     if (!firma) {
       toast.error("Por favor guarda tu firma antes de enviar.");
       return;
     }
-
+  
     if (editandoTramite) {
-      await updateTramiteCampos(editandoTramite.id, formData);
-      toast.success("Trámite corregido y enviado nuevamente.");
+      await updateTramiteCampos(editandoTramite.id, {
+        campos: formData,
+        estado: "Pendiente",
+        firma: firma,
+      });
+      toast.success("¡Gracias por corregir tu trámite! Estará nuevamente en revisión.");
       setEditandoTramite(null);
     } else {
-      await addTramite({
+      const nuevoTramite = {
         tipo: selectedTipo.nombre,
         campos: formData,
         firma: firma,
         estado: "Pendiente",
-      });
-      toast.success("Trámite enviado correctamente.");
+        solicitante: nombreUsuario,
+      };
+  
+      await addTramite(nuevoTramite);
+      await sendTramiteEmail(nuevoTramite); // 📩 mandar correo
+      toast.success("Trámite enviado correctamente y notificación enviada.");
     }
-
+  
     resetFormulario();
   };
 
@@ -88,11 +107,12 @@ const UserDashboard= ({ setRole }) => {
     setFormData(tramite.campos);
   };
 
-  const tramitesUsuario = tramites.filter(t => t.solicitante === nombreUsuario);
-
+  const tramitesUsuario = useMemo(() => {
+    return tramites.filter(t => t.solicitante === nombreUsuario);
+  }, [tramites, nombreUsuario]);
   return (
     <>
-      <Navbar setRole={setRole}/>
+      <Navbar setRole={setRole} />
       <div className="user-container">
         <h2>Mis Trámites</h2>
 

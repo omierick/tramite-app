@@ -106,10 +106,35 @@ const RevisorDashboard = () => {
                 <p key={idx}><strong>{campo}:</strong> {valor}</p>
               ))}
 
-              {tramiteSeleccionado.firma ? (
-                <div className="firma-preview-container">
-                  <h4>Firma del Solicitante:</h4>
-                  <img src={tramiteSeleccionado.firma} alt="Firma" className="firma-img" />
+              {tramiteSeleccionado.firma && tramiteSeleccionado.firma.startsWith("data:image/") ? (
+                <div
+                  className="firma-preview-container"
+                  style={{
+                    marginTop: "20px",
+                    textAlign: "center",
+                  }}
+                >
+                  <h4 style={{ marginBottom: "10px" }}>Firma del Solicitante:</h4>
+                  <div
+                    style={{
+                      display: "inline-block",
+                      border: "1px dashed #ccc",
+                      padding: "10px",
+                      borderRadius: "8px",
+                      maxWidth: "300px",
+                    }}
+                  >
+                    <img
+                      src={tramiteSeleccionado.firma}
+                      alt="Firma del solicitante"
+                      style={{
+                        maxWidth: "100%",
+                        height: "auto",
+                        display: "block",
+                        margin: "0 auto",
+                      }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <p><em>Sin firma disponible</em></p>

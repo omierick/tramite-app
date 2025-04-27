@@ -101,17 +101,19 @@ export const TramitesProvider = ({ children }) => {
     }
   };
 
-  const updateTramiteCampos = async (id, nuevosCampos) => {
+  const updateTramiteCampos = async (id, nuevosDatos) => {
     const { data, error } = await supabase
       .from("tramites")
-      .update({ campos: nuevosCampos })
+      .update(nuevosDatos) // 🔥 actualizar TODO lo que mandes
       .eq("id", id)
       .select();
-
+  
     if (error) {
-      console.error("Error actualizando campos del trámite:", error);
+      console.error("Error actualizando trámite:", error);
     } else if (data && data.length > 0) {
-      setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+      setTramites(prev =>
+        prev.map(t => (t.id === id ? { ...t, ...data[0] } : t))
+      );
     }
   };
 
