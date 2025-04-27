@@ -1,49 +1,38 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { supabase } from "../services/supabaseClient";
+import { useTramites } from "../context/TramitesContext";
+import "./Login.css";
 
-function Login({ setRole }) {
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+const Login = ({ setRole }) => {
+  const [usuarios, setUsuarios] = useState([]);
+  const { setNombreUsuario } = useTramites();
 
-  const users = {
-    admin: { password: 'admin123', role: 'admin' },
-    revisor: { password: 'revisor123', role: 'revisor' },
-    usuario: { password: 'usuario123', role: 'usuario' }
-  };
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      const { data, error } = await supabase.from("usuarios").select("*");
+      if (error) console.error("Error cargando usuarios:", error);
+      else setUsuarios(data || []);
+    };
+    fetchUsuarios();
+  }, []);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const user = users[form.username];
-
-    if (user && user.password === form.password) {
-      setRole(user.role);
-      navigate('/');
-    } else {
-      setError('Usuario o contraseña incorrectos.');
-    }
+  const handleLogin = (usuario) => {
+    setNombreUsuario(usuario.nombre);
+    setRole(usuario.rol); // 👈 Ya sabes si es admin, revisor o usuario
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md mx-auto mt-20">
-      <h2 className="text-2xl font-bold text-center">Iniciar Sesión</h2>
-
-      <input className="input" type="text" name="username" placeholder="Usuario" value={form.username} onChange={handleChange} required />
-      <input className="input" type="password" name="password" placeholder="Contraseña" value={form.password} onChange={handleChange} required />
-      
-      <button className="btn" type="submit">Ingresar</button>
-
-      {error && <p className="text-red-500 font-bold">{error}</p>}
-    </form>
+    <div className="login-container">
+      <h2>Selecciona tu usuario para iniciar sesión</h2>
+      <div className="usuarios-grid">
+        {usuarios.map((usuario) => (
+          <button key={usuario.id} onClick={() => handleLogin(usuario)}>
+            {usuario.nombre} ({usuario.rol})
+          </button>
+        ))}
+      </div>
+    </div>
   );
-}
+};
 
 export default Login;
-

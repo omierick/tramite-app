@@ -353,3 +353,46 @@
 .btn-eliminar:hover {
   background-color: #c82333;
 }
+
+
+.tabla-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.tabla-admin {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tabla-admin th, .tabla-admin td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+
+.tabla-admin th {
+  background-color: #f0f2f5;
+  color: #333;
+  font-weight: bold;
+}
+
+.estado.pendiente {
+  color: #ff9800;
+  font-weight: bold;
+}
+
+.estado.aprobado {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.estado.rechazado {
+  color: #dc3545;
+  font-weight: bold;
+}

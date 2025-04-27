@@ -1,3 +1,4 @@
+// src/context/TramitesContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 
@@ -8,6 +9,8 @@ export const useTramites = () => useContext(TramitesContext);
 export const TramitesProvider = ({ children }) => {
   const [tramites, setTramites] = useState([]);
   const [tiposTramite, setTiposTramite] = useState([]);
+  const [nombreUsuario, setNombreUsuario] = useState("");
+  const [rolUsuario, setRolUsuario] = useState(""); // Nuevo estado para rol
 
   useEffect(() => {
     fetchTramites();
@@ -40,11 +43,23 @@ export const TramitesProvider = ({ children }) => {
     }
   };
 
+  // 🔥 Buscar usuario ahora por CORREO
+  const buscarUsuarioPorCorreo = async (correo) => {
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("correo", correo)
+      .single();
+
+    return { data, error };
+  };
+
   const addTramite = async (nuevoTramite) => {
     const { data, error } = await supabase
       .from("tramites")
       .insert({
         ...nuevoTramite,
+        solicitante: nombreUsuario || "No especificado",
         createdAt: new Date().toISOString(),
       })
       .select();
@@ -80,11 +95,50 @@ export const TramitesProvider = ({ children }) => {
       .select();
 
     if (error) {
-      console.error("Error actualizando estado de trámite:", error);
+      console.error("Error actualizando estado del trámite:", error);
     } else if (data && data.length > 0) {
-      setTramites(prev =>
-        prev.map(t => (t.id === id ? { ...t, ...data[0] } : t))
-      );
+      setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+    }
+  };
+
+  const updateTramiteCampos = async (id, nuevosCampos) => {
+    const { data, error } = await supabase
+      .from("tramites")
+      .update({ campos: nuevosCampos })
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Error actualizando campos del trámite:", error);
+    } else if (data && data.length > 0) {
+      setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+    }
+  };
+
+  const updateTipoTramite = async (id, camposActualizados) => {
+    const { data, error } = await supabase
+      .from("tipos_tramite")
+      .update(camposActualizados)
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Error actualizando tipo de trámite:", error);
+    } else if (data && data.length > 0) {
+      setTiposTramite(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+    }
+  };
+
+  const deleteTipoTramite = async (id) => {
+    const { error } = await supabase
+      .from("tipos_tramite")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error eliminando tipo de trámite:", error);
+    } else {
+      setTiposTramite(prev => prev.filter(t => t.id !== id));
     }
   };
 
@@ -93,9 +147,17 @@ export const TramitesProvider = ({ children }) => {
       value={{
         tramites,
         tiposTramite,
+        nombreUsuario,
+        rolUsuario,
+        setNombreUsuario,
+        setRolUsuario,
+        buscarUsuarioPorCorreo,
         addTramite,
         addTipoTramite,
         updateTramiteEstado,
+        updateTramiteCampos,
+        updateTipoTramite,
+        deleteTipoTramite,
       }}
     >
       {children}

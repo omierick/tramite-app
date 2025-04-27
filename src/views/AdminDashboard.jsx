@@ -1,3 +1,4 @@
+// src/views/AdminDashboard.jsx
 import { useState, useRef } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
@@ -8,13 +9,19 @@ import jsPDF from "jspdf";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
-  const { tiposTramite, tramites, addTipoTramite } = useTramites();
+  const {
+    tramites,
+    tiposTramite,
+    addTipoTramite,
+    updateTipoTramite,
+    deleteTipoTramite
+  } = useTramites();
+
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
   const [campos, setCampos] = useState([]);
-  const dashboardRef = useRef(); // Referencia para exportar el dashboard
+  const dashboardRef = useRef();
 
-  // 🧠 Funciones estadísticas
   const totalTramites = tramites.length;
   const pendientes = tramites.filter(t => t.estado === "Pendiente").length;
   const aprobados = tramites.filter(t => t.estado === "Aprobado").length;
@@ -23,8 +30,7 @@ const AdminDashboard = () => {
   const promedioTiempo = () => {
     const tiempos = tramites
       .filter(t => t.reviewedAt)
-      .map(t => (new Date(t.reviewedAt) - new Date(t.createdAt)) / (1000 * 60)); // en minutos
-
+      .map(t => (new Date(t.reviewedAt) - new Date(t.createdAt)) / (1000 * 60));
     if (tiempos.length === 0) return "-";
 
     const total = tiempos.reduce((a, b) => a + b, 0);
@@ -63,7 +69,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // 📥 Función para exportar el dashboard como PDF
   const handleExportDashboard = () => {
     const input = dashboardRef.current;
     html2canvas(input, { scale: 2 }).then((canvas) => {
@@ -82,58 +87,32 @@ const AdminDashboard = () => {
     <>
       <Navbar />
       <div className="admin-container">
-
         <h2>Panel de Administración</h2>
 
-        {/* BOTÓN EXPORTAR */}
         <div className="exportar-container">
           <button className="btn-exportar" onClick={handleExportDashboard}>
             📥 Exportar Dashboard
           </button>
         </div>
 
-        {/* Dashboard completo que se exporta */}
         <div ref={dashboardRef}>
-
-          {/* Dashboard Numérico */}
           <div className="dashboard-grid">
-            <div className="card-dashboard">
-              <h3>Total Trámites</h3>
-              <p>{totalTramites}</p>
-            </div>
-            <div className="card-dashboard">
-              <h3>Pendientes</h3>
-              <p>{pendientes}</p>
-            </div>
-            <div className="card-dashboard">
-              <h3>Aprobados</h3>
-              <p>{aprobados}</p>
-            </div>
-            <div className="card-dashboard">
-              <h3>Rechazados</h3>
-              <p>{rechazados}</p>
-            </div>
-            <div className="card-dashboard">
-              <h3>Tiempo Promedio Resolución</h3>
-              <p>{promedioTiempo()}</p>
-            </div>
-            <div className="card-dashboard">
-              <h3>Trámites Hoy</h3>
-              <p>{tramitesHoy}</p>
-            </div>
+            <div className="card-dashboard"><h3>Total Trámites</h3><p>{totalTramites}</p></div>
+            <div className="card-dashboard"><h3>Pendientes</h3><p>{pendientes}</p></div>
+            <div className="card-dashboard"><h3>Aprobados</h3><p>{aprobados}</p></div>
+            <div className="card-dashboard"><h3>Rechazados</h3><p>{rechazados}</p></div>
+            <div className="card-dashboard"><h3>Tiempo Promedio Resolución</h3><p>{promedioTiempo()}</p></div>
+            <div className="card-dashboard"><h3>Trámites Hoy</h3><p>{tramitesHoy}</p></div>
           </div>
 
-          {/* Dashboard Gráfico */}
           <div className="visual-dashboard">
             <ChartsDashboard pendientes={pendientes} aprobados={aprobados} rechazados={rechazados} />
             <HeatmapDashboard tramites={tramites} />
           </div>
-
         </div>
 
         <hr className="divider" />
 
-        {/* Crear Nuevo Trámite */}
         <h2>Crear Nuevo Tipo de Trámite</h2>
 
         <div className="form-crear">
@@ -177,7 +156,32 @@ const AdminDashboard = () => {
 
         <hr className="divider" />
 
-        {/* Tipos de Trámite existentes */}
+        <h2>Lista de Trámites Recibidos</h2>
+        <div className="tabla-container">
+          <table className="tabla-admin">
+            <thead>
+              <tr>
+                <th>Tipo de Trámite</th>
+                <th>Solicitante</th>
+                <th>Estado</th>
+                <th>Fecha de Creación</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tramites.map((tramite) => (
+                <tr key={tramite.id}>
+                  <td>{tramite.tipo}</td>
+                  <td>{tramite.solicitante || "No especificado"}</td>
+                  <td className={`estado ${tramite.estado?.toLowerCase() || ''}`}>
+                    {tramite.estado || "Desconocido"}
+                  </td>
+                  <td>{tramite.createdAt ? new Date(tramite.createdAt).toLocaleString() : "Sin fecha"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         <h2>Tipos de Trámite Existentes</h2>
         <div className="tramites-grid">
           {tiposTramite.map((tipo) => (
