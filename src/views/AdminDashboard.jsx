@@ -1,5 +1,6 @@
 // src/views/AdminDashboard.jsx
 import { useState, useRef } from "react";
+import ReactPaginate from "react-paginate";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
 import ChartsDashboard from "../components/ChartsDashboard";
@@ -20,6 +21,8 @@ const AdminDashboard = () => {
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
   const [campos, setCampos] = useState([]);
+  const [pageNumber, setPageNumber] = useState(0);
+  const itemsPerPage = 10;
   const dashboardRef = useRef();
 
   const totalTramites = tramites.length;
@@ -46,6 +49,13 @@ const AdminDashboard = () => {
     const now = new Date();
     return created.toDateString() === now.toDateString();
   }).length;
+
+  const pagesVisited = pageNumber * itemsPerPage;
+  const displayTramites = tramites.slice(pagesVisited, pagesVisited + itemsPerPage);
+
+  const handlePageChange = ({ selected }) => {
+    setPageNumber(selected);
+  };
 
   const handleAddCampo = () => {
     if (campoNuevo.trim() !== "") {
@@ -168,7 +178,7 @@ const AdminDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {tramites.map((tramite) => (
+              {displayTramites.map((tramite) => (
                 <tr key={tramite.id}>
                   <td>{tramite.tipo}</td>
                   <td>{tramite.solicitante || "No especificado"}</td>
@@ -180,6 +190,15 @@ const AdminDashboard = () => {
               ))}
             </tbody>
           </table>
+          <ReactPaginate
+            previousLabel={"← Anterior"}
+            nextLabel={"Siguiente →"}
+            pageCount={Math.ceil(tramites.length / itemsPerPage)}
+            onPageChange={handlePageChange}
+            containerClassName={"pagination"}
+            activeClassName={"active-page"}
+            disabledClassName={"disabled-page"}
+          />
         </div>
 
         <h2>Tipos de Trámite Existentes</h2>

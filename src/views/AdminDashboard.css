@@ -396,3 +396,35 @@
   color: #dc3545;
   font-weight: bold;
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  list-style: none;
+  padding: 0;
+}
+
+.pagination li {
+  margin: 0 5px;
+}
+
+.pagination a {
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  color: #007bff;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pagination .active-page a {
+  background-color: #007bff;
+  color: white;
+}
+
+.pagination .disabled-page a {
+  color: grey;
+  border-color: grey;
+  cursor: not-allowed;
+}
