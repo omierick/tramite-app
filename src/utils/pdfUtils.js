@@ -4,45 +4,63 @@ import html2pdf from "html2pdf.js";
 export const generatePDF = (tramite) => {
   const element = document.createElement("div");
 
+  const fechaActual = new Date().toLocaleString();
+
   let htmlContent = `
-    <div style="font-family: Arial, sans-serif;">
-      <h1 style="text-align:center; color: #2c3e50;">Trámite: ${
-        tramite.tipo
-      }</h1>
-      <h3>Solicitante: ${
-        tramite.campos["Nombre del solicitante"] || "No especificado"
-      }</h3>
-      <h4>Estado: ${tramite.estado}</h4>
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h1 style="text-align:center; color:#1f2937;">Municipalidad de Ejemplo</h1>
+      <p style="text-align:center; color:#6b7280;">Documento Validado de Trámite</p>
+
       <hr style="margin: 20px 0;"/>
-      <div style="margin-top:20px;">
-        ${Object.entries(tramite.campos)
-          .map(
-            ([campo, valor]) => `
-              <p><strong>${campo}:</strong> ${valor}</p>
-            `
-          )
-          .join("")}
-      </div>
 
-      ${
-        tramite.firma && tramite.firma.startsWith("data:image/") 
-          ? `
-          <div class="firma-preview" style="margin-top: 30px; text-align: center;">
-            <p><strong>Firma del Solicitante:</strong></p>
-            <div class="firma-box" style="display: inline-block; border: 1px dashed #ccc; padding: 10px; border-radius: 8px; margin-top: 10px;">
-              <img src="${tramite.firma}" alt="Firma del solicitante" style="max-width: 100%; height: auto;" />
-            </div>
-          </div>
-          `
-          : ""
-      }
+      <h3 style="margin-bottom:10px;">Datos del Trámite</h3>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr style="background-color:#f0f4f8;">
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Tipo de Trámite</th>
+          <td style="padding:8px; border:1px solid #ccc;">${tramite.tipo}</td>
+        </tr>
+        <tr>
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Fecha de Solicitud</th>
+          <td style="padding:8px; border:1px solid #ccc;">${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td>
+        </tr>
+        <tr>
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Fecha de Validación</th>
+          <td style="padding:8px; border:1px solid #ccc;">${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td>
+        </tr>
+        <tr>
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Estado</th>
+          <td style="padding:8px; border:1px solid #ccc;">${tramite.estado}</td>
+        </tr>
+      </table>
 
-      <p style="margin-top:30px; font-size:12px; color:#7f8c8d;">
-        Fecha de creación: ${
-          tramite.createdAt
-            ? new Date(tramite.createdAt).toLocaleString()
-            : "No disponible"
-        }
+      <h3 style="margin:20px 0 10px;">Datos del Solicitante</h3>
+      <table style="width:100%; border-collapse: collapse;">
+        <tr style="background-color:#f0f4f8;">
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Nombre Completo</th>
+          <td style="padding:8px; border:1px solid #ccc;">${tramite.solicitante || '-'}</td>
+        </tr>
+        <tr>
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Documento de Identidad</th>
+          <td style="padding:8px; border:1px solid #ccc;">-</td>
+        </tr>
+        <tr>
+          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Dirección</th>
+          <td style="padding:8px; border:1px solid #ccc;">-</td>
+        </tr>
+      </table>
+
+      <h3 style="margin:20px 0 10px;">Datos Adicionales</h3>
+      <table style="width:100%; border-collapse: collapse;">
+        ${Object.entries(tramite.campos || {}).map(([campo, valor]) => `
+          <tr>
+            <th style="padding:8px; border:1px solid #ccc; text-align:left; background-color:#f0f4f8;">${campo}</th>
+            <td style="padding:8px; border:1px solid #ccc;">${valor || '-'}</td>
+          </tr>
+        `).join('')}
+      </table>
+
+      <p style="margin-top:30px; font-size:12px; color:#6b7280; text-align:center;">
+        Documento generado el: ${fechaActual}
       </p>
     </div>
   `;
@@ -53,7 +71,7 @@ export const generatePDF = (tramite) => {
     .from(element)
     .set({
       margin: 10,
-      filename: `tramite_${tramite.tipo}.pdf`,
+      filename: `tramite_${tramite.tipo.replace(/\s+/g,'_')}.pdf`,
       html2canvas: { scale: 2 },
       jsPDF: { unit: "mm", format: "a4" },
     })

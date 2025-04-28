@@ -1,3 +1,5 @@
+/* src/views/RevisorDashboard.css */
+
 .revisor-container {
   padding: 30px;
   background-color: #f5f7fa;
@@ -54,10 +56,9 @@
 }
 
 /* Botones */
-.btn-ver,
+.btn-detalles,
 .btn-aprobar,
-.btn-rechazar,
-.btn-descargar {
+.btn-rechazar {
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
@@ -67,11 +68,11 @@
   transition: background-color 0.3s ease;
 }
 
-.btn-ver {
+.btn-detalles {
   background-color: #17a2b8;
   color: white;
 }
-.btn-ver:hover {
+.btn-detalles:hover {
   background-color: #138496;
 }
 
@@ -91,71 +92,7 @@
   background-color: #c82333;
 }
 
-.btn-descargar {
-  background-color: #6c757d;
-  color: white;
-}
-.btn-descargar:hover {
-  background-color: #5a6268;
-}
-
-/* Modal Vista Previa */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  animation: fadeIn 0.3s ease-in-out;
-  text-align: left;
-}
-
-.campos-container p {
-  margin: 8px 0;
-  font-size: 14px;
-}
-
-/* Botón cerrar */
-.btn-cerrar {
-  background-color: #343a40;
-  color: white;
-  padding: 10px;
-  border: none;
-  width: 100%;
-  margin-top: 20px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.btn-cerrar:hover {
-  background-color: #23272b;
-}
-
-/* Animación */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Modal de fondo */
+/* Modal de Vista Previa */
 .overlay-modal {
   position: fixed;
   top: 0;
@@ -169,14 +106,33 @@
   z-index: 999;
 }
 
-/* Tarjeta de detalles */
 .detalle-modal {
   background: #fff;
   padding: 2rem;
   border-radius: 12px;
-  width: 400px;
+  width: 95%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.3s ease;
+}
+
+.detalle-modal table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.detalle-modal th, .detalle-modal td {
+  border: 1px solid #ccc;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.detalle-modal th {
+  background-color: #f0f2f5;
+  text-align: left;
 }
 
 /* Contenedor de la firma */
@@ -188,7 +144,6 @@
   text-align: center;
 }
 
-/* Imagen de firma */
 .firma-img {
   width: 100%;
   max-height: 150px;
@@ -212,19 +167,16 @@
   transition: background 0.2s ease;
 }
 
-/* Botón azul */
 .btn-pdf {
-  background-color: #2563eb; /* azul bonito */
+  background-color: #2563eb;
   color: white;
 }
 
-/* Botón rojo */
 .btn-cerrar {
-  background-color: #dc2626; /* rojo bonito */
+  background-color: #dc2626;
   color: white;
 }
 
-/* Hover efecto */
 .btn-pdf:hover {
   background-color: #1e40af;
 }
@@ -233,7 +185,6 @@
   background-color: #b91c1c;
 }
 
-/* Animación entrada */
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }

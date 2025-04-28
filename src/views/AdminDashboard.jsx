@@ -165,7 +165,6 @@ const AdminDashboard = () => {
 
         <h2>Lista de Trámites Recibidos</h2>
 
-        {/* Filtros */}
         <div className="filtros-container">
           <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
             <option value="todos">Todos</option>
