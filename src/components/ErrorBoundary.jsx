@@ -1,4 +1,6 @@
+// src/components/ErrorBoundary.jsx
 import { Component } from "react";
+import { toast } from "react-toastify";
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -7,19 +9,16 @@ class ErrorBoundary extends Component {
   }
 
   static getDerivedStateFromError(error) {
+    toast.error("⚠️ Algo salió mal inesperadamente.");
     return { hasError: true };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("Error capturado en ErrorBoundary:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: "50px", textAlign: "center" }}>
-          <h2>😕 Algo salió mal</h2>
-          <p>Por favor, recarga la página o intenta más tarde.</p>
+        <div style={{ textAlign: "center", padding: "3rem" }}>
+          <h2>Algo salió mal... 😢</h2>
+          <p>Estamos trabajando para solucionarlo. Por favor intenta recargar la página.</p>
         </div>
       );
     }

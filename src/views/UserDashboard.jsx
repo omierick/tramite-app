@@ -1,11 +1,18 @@
-// src/pages/UserDashboard.jsx
 import { useState, useEffect, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
 import FirmaCanvas from "../components/FirmaCanvas";
 import { toast } from "react-toastify";
 import "./UserDashboard.css";
 import { sendTramiteEmail } from "../services/emailService";
+
+
+const schema = yup.object().shape({
+  firma: yup.string().required("Debes firmar el trámite antes de enviarlo"),
+});
 
 const UserDashboard = ({ setRole }) => {
   const {
@@ -23,10 +30,9 @@ const UserDashboard = ({ setRole }) => {
   const [firma, setFirma] = useState(null);
   const [editandoTramite, setEditandoTramite] = useState(null);
 
-  const handleSelectChange = (e) => {
-    setTramiteSeleccionadoId(e.target.value);
-  };
-
+  const { handleSubmit, setValue, formState: { errors } } = useForm({
+    resolver: yupResolver(schema),
+  });
 
   useEffect(() => {
     if (!nombreUsuario && tramites.length > 0) {
@@ -36,6 +42,10 @@ const UserDashboard = ({ setRole }) => {
       }
     }
   }, [nombreUsuario, tramites]);
+
+  const handleSelectChange = (e) => {
+    setTramiteSeleccionadoId(e.target.value);
+  };
 
   const handleSelectSubmit = (e) => {
     e.preventDefault();
@@ -56,26 +66,24 @@ const UserDashboard = ({ setRole }) => {
     setFormData({ ...formData, [campo]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
+  const onSubmit = async () => {
     if (!nombreUsuario) {
       toast.error("Debes ingresar tu nombre antes de enviar un trámite.");
       return;
     }
-  
+
     if (!firma) {
       toast.error("Por favor guarda tu firma antes de enviar.");
       return;
     }
-  
+
     if (editandoTramite) {
       await updateTramiteCampos(editandoTramite.id, {
         campos: formData,
         estado: "Pendiente",
         firma: firma,
       });
-      toast.success("¡Gracias por corregir tu trámite! Estará nuevamente en revisión.");
+      toast.success("¡Trámite corregido! Se enviará nuevamente a revisión.");
       setEditandoTramite(null);
     } else {
       const nuevoTramite = {
@@ -85,12 +93,11 @@ const UserDashboard = ({ setRole }) => {
         estado: "Pendiente",
         solicitante: nombreUsuario,
       };
-  
       await addTramite(nuevoTramite);
       await sendTramiteEmail(nuevoTramite); // 📩 mandar correo
-      toast.success("Trámite enviado correctamente y notificación enviada.");
+      toast.success("¡Trámite enviado correctamente!");
     }
-  
+
     resetFormulario();
   };
 
@@ -110,9 +117,10 @@ const UserDashboard = ({ setRole }) => {
   const tramitesUsuario = useMemo(() => {
     return tramites.filter(t => t.solicitante === nombreUsuario);
   }, [tramites, nombreUsuario]);
+
   return (
     <>
-      <Navbar setRole={setRole} />
+      <Navbar />
       <div className="user-container">
         <h2>Mis Trámites</h2>
 
@@ -128,7 +136,7 @@ const UserDashboard = ({ setRole }) => {
             />
           </div>
         ) : editandoTramite || selectedTipo ? (
-          <form className="tramite-form" onSubmit={handleSubmit}>
+          <form className="tramite-form" onSubmit={handleSubmit(onSubmit)}>
             <h3>{editandoTramite ? "Editar Trámite Rechazado" : `Nuevo Trámite: ${selectedTipo.nombre}`}</h3>
 
             {selectedTipo.campos.map((campo, idx) => (
@@ -147,6 +155,8 @@ const UserDashboard = ({ setRole }) => {
               <label>Firma del solicitante:</label>
               <FirmaCanvas setFirma={setFirma} />
             </div>
+
+            {errors.firma && <p className="error">{errors.firma.message}</p>}
 
             <button className="btn-primary" type="submit">
               {editandoTramite ? "Enviar Corrección" : "Enviar Trámite"}

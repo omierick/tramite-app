@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { useState, useRef } from "react";
+// src/views/AdminDashboard.jsx
+import { useState, useRef, useMemo } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
 import DashboardHeader from "./AdminDashboard/DashboardHeader";
@@ -18,13 +18,16 @@ const AdminDashboard = () => {
     tiposTramite,
     addTipoTramite,
     updateTipoTramite,
-    deleteTipoTramite
+    deleteTipoTramite,
   } = useTramites();
 
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
   const [campos, setCampos] = useState([]);
   const [pageNumber, setPageNumber] = useState(0);
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
+  const [orden, setOrden] = useState("recientes");
   const itemsPerPage = 10;
   const dashboardRef = useRef();
 
@@ -51,8 +54,34 @@ const AdminDashboard = () => {
     return created.toDateString() === now.toDateString();
   }).length;
 
+  const tramitesFiltrados = useMemo(() => {
+    let filtrados = [...tramites];
+
+    if (filtroEstado !== "todos") {
+      filtrados = filtrados.filter(t => t.estado === filtroEstado);
+    }
+
+    if (busqueda.trim() !== "") {
+      filtrados = filtrados.filter(
+        t =>
+          t.tipo?.toLowerCase().includes(busqueda.toLowerCase()) ||
+          t.solicitante?.toLowerCase().includes(busqueda.toLowerCase())
+      );
+    }
+
+    if (orden === "recientes") {
+      filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (orden === "antiguos") {
+      filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (orden === "tipo") {
+      filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
+    }
+
+    return filtrados;
+  }, [tramites, filtroEstado, busqueda, orden]);
+
   const pagesVisited = pageNumber * itemsPerPage;
-  const displayTramites = tramites.slice(pagesVisited, pagesVisited + itemsPerPage);
+  const displayTramites = tramitesFiltrados.slice(pagesVisited, pagesVisited + itemsPerPage);
 
   const handlePageChange = ({ selected }) => {
     setPageNumber(selected);
@@ -99,6 +128,7 @@ const AdminDashboard = () => {
       <Navbar />
       <div className="admin-container">
         <DashboardHeader onExportDashboard={handleExportDashboard} />
+
         <div ref={dashboardRef}>
           <DashboardCards
             total={totalTramites}
@@ -108,6 +138,7 @@ const AdminDashboard = () => {
             promedioTiempo={promedioTiempo()}
             tramitesHoy={tramitesHoy}
           />
+
           <DashboardCharts
             pendientes={pendientes}
             aprobados={aprobados}
@@ -117,8 +148,8 @@ const AdminDashboard = () => {
         </div>
 
         <hr className="divider" />
-        <h2>Crear Nuevo Tipo de Trámite</h2>
 
+        <h2>Crear Nuevo Tipo de Trámite</h2>
         <CrearTramiteForm
           nombreTramite={nombreTramite}
           setNombreTramite={setNombreTramite}
@@ -130,17 +161,40 @@ const AdminDashboard = () => {
         />
 
         <hr className="divider" />
+
         <h2>Lista de Trámites Recibidos</h2>
 
+        {/* Filtros */}
+        <div className="filtros-container">
+          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <option value="todos">Todos</option>
+            <option value="Pendiente">Pendientes</option>
+            <option value="Aprobado">Aprobados</option>
+            <option value="Rechazado">Rechazados</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Buscar por solicitante o tipo..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+
+          <select value={orden} onChange={(e) => setOrden(e.target.value)}>
+            <option value="recientes">Más recientes</option>
+            <option value="antiguos">Más antiguos</option>
+            <option value="tipo">Ordenar por tipo</option>
+          </select>
+        </div>
+
         <TramitesTable
-          tramites={tramites}
+          tramites={tramitesFiltrados}
           displayTramites={displayTramites}
           handlePageChange={handlePageChange}
           itemsPerPage={itemsPerPage}
         />
 
         <h2>Tipos de Trámite Existentes</h2>
-
         <TiposTramiteGrid
           tiposTramite={tiposTramite}
           updateTipoTramite={updateTipoTramite}

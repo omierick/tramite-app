@@ -1,4 +1,4 @@
-import PropTypes from "prop-types";
+// src/views/AdminDashboard/TramitesTable.jsx
 import ReactPaginate from "react-paginate";
 
 const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPage }) => {
@@ -14,16 +14,26 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
           </tr>
         </thead>
         <tbody>
-          {displayTramites.map((tramite) => (
-            <tr key={tramite.id}>
-              <td>{tramite.tipo}</td>
-              <td>{tramite.solicitante || "No especificado"}</td>
-              <td className={`estado ${tramite.estado?.toLowerCase() || ''}`}>
-                {tramite.estado || "Desconocido"}
-              </td>
-              <td>{tramite.createdAt ? new Date(tramite.createdAt).toLocaleString() : "Sin fecha"}</td>
+          {displayTramites.length > 0 ? (
+            displayTramites.map((tramite) => (
+              <tr key={tramite.id}>
+                <td>{tramite.tipo}</td>
+                <td>{tramite.solicitante || "No especificado"}</td>
+                <td className={`estado ${tramite.estado?.toLowerCase() || ""}`}>
+                  {tramite.estado || "Desconocido"}
+                </td>
+                <td>
+                  {tramite.createdAt
+                    ? new Date(tramite.createdAt).toLocaleString()
+                    : "Sin fecha"}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4">No se encontraron trámites.</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 
@@ -38,13 +48,6 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
       />
     </div>
   );
-};
-
-TramitesTable.propTypes = {
-  tramites: PropTypes.array.isRequired,
-  displayTramites: PropTypes.array.isRequired,
-  handlePageChange: PropTypes.func.isRequired,
-  itemsPerPage: PropTypes.number.isRequired,
 };
 
 export default TramitesTable;

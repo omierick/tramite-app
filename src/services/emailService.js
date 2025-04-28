@@ -1,11 +1,10 @@
-// src/services/emailService.js
 import emailjs from "@emailjs/browser";
 
 export const sendTramiteEmail = async (tramite) => {
   try {
-    const serviceId = "service_6ti57qy"; // 👈 tu service_id
-    const templateId = "template_t5o2ki8"; // 👈 tu template_id
-    const publicKey = "SUpfpJKE0aL-57jn0"; // 👈 tu public_key
+    const serviceId = "service_6ti57qy"; 
+    const templateId = "template_t5o2ki8"; 
+    const publicKey = "SUpfpJKE0aL-57jn0"; 
 
     const detalles = Object.entries(tramite.campos || {})
       .map(([campo, valor]) => `- ${campo}: ${valor}`)
@@ -15,17 +14,17 @@ export const sendTramiteEmail = async (tramite) => {
       name: tramite.solicitante || "No especificado",
       message: `
 Nuevo trámite recibido:
-Tipo de trámite: ${tramite.tipo || "No especificado"}
+Tipo: ${tramite.tipo || "No especificado"}
 Estado: ${tramite.estado || "Pendiente"}
-Fecha de solicitud: ${new Date().toLocaleDateString()}
+Fecha: ${new Date().toLocaleDateString()}
 Detalles:
 ${detalles}
-      `.trim()
+`.trim()
     };
 
-    const response = await emailjs.send(serviceId, templateId, templateParams, publicKey);
-    console.log("Correo enviado exitosamente:", response.status);
+    await emailjs.send(serviceId, templateId, templateParams, publicKey);
+    console.log("✅ Correo enviado correctamente");
   } catch (error) {
-    console.error("Error enviando correo:", error);
+    console.error("❌ Error enviando correo:", error);
   }
 };

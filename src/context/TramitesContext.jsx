@@ -10,7 +10,7 @@ export const TramitesProvider = ({ children }) => {
   const [tramites, setTramites] = useState([]);
   const [tiposTramite, setTiposTramite] = useState([]);
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [rolUsuario, setRolUsuario] = useState(""); // Nuevo estado para rol
+  const [rolUsuario, setRolUsuario] = useState(""); // estado para rol
 
   useEffect(() => {
     fetchTramites();
@@ -43,7 +43,6 @@ export const TramitesProvider = ({ children }) => {
     }
   };
 
-  // 🔥 Buscar usuario ahora por CORREO
   const buscarUsuarioPorCorreo = async (correo) => {
     const { data, error } = await supabase
       .from("usuarios")
@@ -104,16 +103,14 @@ export const TramitesProvider = ({ children }) => {
   const updateTramiteCampos = async (id, nuevosDatos) => {
     const { data, error } = await supabase
       .from("tramites")
-      .update(nuevosDatos) // 🔥 actualizar TODO lo que mandes
+      .update(nuevosDatos)
       .eq("id", id)
       .select();
-  
+
     if (error) {
       console.error("Error actualizando trámite:", error);
     } else if (data && data.length > 0) {
-      setTramites(prev =>
-        prev.map(t => (t.id === id ? { ...t, ...data[0] } : t))
-      );
+      setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
     }
   };
 
