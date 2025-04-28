@@ -1,5 +1,6 @@
 // src/views/AdminDashboard.jsx
 import { useState, useRef, useMemo } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
 import DashboardHeader from "./AdminDashboard/DashboardHeader";
