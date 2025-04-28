@@ -1,39 +1,69 @@
 // src/components/FirmaCanvas.jsx
-import { useRef } from 'react';
-import SignaturePad from 'react-signature-pad-wrapper';
-import "./FirmaCanvas.css"; // (puedes crear uno vacío si quieres mejorar estilos)
+import { useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 const FirmaCanvas = ({ setFirma }) => {
-  const signaturePadRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
-  const clear = () => {
-    signaturePadRef.current.clear();
+  const startDrawing = ({ nativeEvent }) => {
+    const { offsetX, offsetY } = nativeEvent;
+    const context = canvasRef.current.getContext("2d");
+    context.beginPath();
+    context.moveTo(offsetX, offsetY);
+    setIsDrawing(true);
   };
 
-  const save = () => {
-    if (signaturePadRef.current.isEmpty()) {
-      alert("Por favor firma antes de guardar.");
-      return;
-    }
-    const dataUrl = signaturePadRef.current.toDataURL();
-    setFirma(dataUrl);
+  const draw = ({ nativeEvent }) => {
+    if (!isDrawing) return;
+    const { offsetX, offsetY } = nativeEvent;
+    const context = canvasRef.current.getContext("2d");
+    context.lineTo(offsetX, offsetY);
+    context.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const handleGuardarFirma = () => {
+    const canvas = canvasRef.current;
+    const dataURL = canvas.toDataURL("image/png");
+    setFirma(dataURL);
+    toast.success("¡Firma guardada exitosamente!"); // ✨ Mensaje bonito
+  };
+
+  const handleLimpiarCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setFirma(null);
   };
 
   return (
-    <div className="firma-container">
-      <SignaturePad
-        ref={signaturePadRef}
-        options={{
-          minWidth: 1,
-          maxWidth: 3,
-          penColor: 'black',
-          backgroundColor: 'white'
+    <div style={{ textAlign: "center" }}>
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={150}
+        style={{
+          border: "2px dashed #ccc",
+          borderRadius: "8px",
+          backgroundColor: "white",
+          marginBottom: "10px"
         }}
-        className="firma-canvas"
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseLeave={stopDrawing}
       />
-      <div className="firma-buttons">
-        <button type="button" onClick={clear} className="btn-secondary">Limpiar</button>
-        <button type="button" onClick={save} className="btn-primary">Guardar Firma</button>
+      <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+        <button className="btn-secondary" type="button" onClick={handleLimpiarCanvas}>
+          Limpiar
+        </button>
+        <button className="btn-primary" type="button" onClick={handleGuardarFirma}>
+          Guardar Firma
+        </button>
       </div>
     </div>
   );

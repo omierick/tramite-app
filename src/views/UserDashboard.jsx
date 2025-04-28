@@ -153,7 +153,10 @@ const UserDashboard = ({ setRole }) => {
 
             <div className="form-group">
               <label>Firma del solicitante:</label>
-              <FirmaCanvas setFirma={setFirma} />
+              <FirmaCanvas setFirma={(firmaData) => {
+                setFirma(firmaData);
+                setValue("firma", firmaData); // 🔥 Actualiza react-hook-form también
+              }} />
             </div>
 
             {errors.firma && <p className="error">{errors.firma.message}</p>}
