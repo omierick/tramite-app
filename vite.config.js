@@ -1,10 +1,11 @@
+// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
   build: {
-    chunkSizeWarningLimit: 1000, // No nos alarme por chunks grandes normales
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -14,5 +15,8 @@ export default defineConfig({
         }
       }
     }
+  },
+  server: {
+    historyApiFallback: true, // 👈 Esto es lo que debes añadir
   }
 });
