@@ -8,3 +8,4 @@ Aplicación para gestión y control de trámites.
 
 ```bash
 npm install
+hola mundo
