@@ -3,14 +3,13 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 
 const TramitesContext = createContext();
-
 export const useTramites = () => useContext(TramitesContext);
 
 export const TramitesProvider = ({ children }) => {
   const [tramites, setTramites] = useState([]);
   const [tiposTramite, setTiposTramite] = useState([]);
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [rolUsuario, setRolUsuario] = useState(""); // estado para rol
+  const [rolUsuario, setRolUsuario] = useState("");
 
   useEffect(() => {
     fetchTramites();
@@ -53,20 +52,17 @@ export const TramitesProvider = ({ children }) => {
     return { data, error };
   };
 
+  // ✅ AQUÍ: función addTramite corregida
   const addTramite = async (nuevoTramite) => {
     const { data, error } = await supabase
       .from("tramites")
-      .insert({
-        ...nuevoTramite,
-        solicitante: nombreUsuario || "No especificado",
-        createdAt: new Date().toISOString(),
-      })
+      .insert([nuevoTramite]) // Usa el objeto completo con email, etc.
       .select();
 
     if (error) {
       console.error("Error creando trámite:", error);
     } else if (data && data.length > 0) {
-      setTramites(prev => [data[0], ...prev]);
+      setTramites((prev) => [data[0], ...prev]);
     }
   };
 
@@ -79,26 +75,27 @@ export const TramitesProvider = ({ children }) => {
     if (error) {
       console.error("Error creando tipo de trámite:", error);
     } else if (data && data.length > 0) {
-      setTiposTramite(prev => [...prev, data[0]]);
+      setTiposTramite((prev) => [...prev, data[0]]);
     }
   };
 
+  
   const updateTramiteEstado = async (id, nuevoEstado) => {
-    const { data, error } = await supabase
-      .from("tramites")
-      .update({
-        estado: nuevoEstado,
-        reviewedAt: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select();
+  const { data, error } = await supabase
+    .from("tramites")
+    .update({
+      estado: nuevoEstado,
+      reviewedAt: new Date().toISOString(), // 🟢 esto es lo que debe agregarse
+    })
+    .eq("id", id)
+    .select();
 
-    if (error) {
-      console.error("Error actualizando estado del trámite:", error);
-    } else if (data && data.length > 0) {
-      setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
-    }
-  };
+  if (error) {
+    console.error("Error actualizando estado del trámite:", error);
+  } else if (data && data.length > 0) {
+    setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+  }
+};
 
   const updateTramiteCampos = async (id, nuevosDatos) => {
     const { data, error } = await supabase
@@ -110,7 +107,9 @@ export const TramitesProvider = ({ children }) => {
     if (error) {
       console.error("Error actualizando trámite:", error);
     } else if (data && data.length > 0) {
-      setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+      setTramites((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...data[0] } : t))
+      );
     }
   };
 
@@ -124,20 +123,18 @@ export const TramitesProvider = ({ children }) => {
     if (error) {
       console.error("Error actualizando tipo de trámite:", error);
     } else if (data && data.length > 0) {
-      setTiposTramite(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+      setTiposTramite((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...data[0] } : t))
+      );
     }
   };
 
   const deleteTipoTramite = async (id) => {
-    const { error } = await supabase
-      .from("tipos_tramite")
-      .delete()
-      .eq("id", id);
-
+    const { error } = await supabase.from("tipos_tramite").delete().eq("id", id);
     if (error) {
       console.error("Error eliminando tipo de trámite:", error);
     } else {
-      setTiposTramite(prev => prev.filter(t => t.id !== id));
+      setTiposTramite((prev) => prev.filter((t) => t.id !== id));
     }
   };
 

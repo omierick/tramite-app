@@ -1,22 +1,39 @@
 // src/views/AdminDashboard/TramitesTable.jsx
 import ReactPaginate from "react-paginate";
+import { generatePDF } from "../../utils/pdfUtils";
 
 const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPage }) => {
+  const handleDescargarPDF = (tramite) => {
+    const tramiteConFechas = {
+      ...tramite,
+      tipo: tramite.tipo,
+      estado: tramite.estado,
+      createdAt: tramite.createdAt || new Date().toISOString(),
+      reviewedAt: new Date().toISOString(),
+    };
+    generatePDF(tramiteConFechas);
+  };
+
   return (
     <div className="tabla-container">
       <table className="tabla-admin">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Tipo de Trámite</th>
             <th>Solicitante</th>
             <th>Estado</th>
             <th>Fecha de Creación</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {displayTramites.length > 0 ? (
             displayTramites.map((tramite) => (
               <tr key={tramite.id}>
+                <td style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "#888" }}>
+                  {tramite.id}
+                </td>
                 <td>{tramite.tipo}</td>
                 <td>{tramite.solicitante || "No especificado"}</td>
                 <td className={`estado ${tramite.estado?.toLowerCase() || ""}`}>
@@ -27,11 +44,23 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
                     ? new Date(tramite.createdAt).toLocaleString()
                     : "Sin fecha"}
                 </td>
+                <td>
+                  {tramite.estado === "Aprobado" && (
+                    <button
+                      className="btn-descargar"
+                      onClick={() => handleDescargarPDF(tramite)}
+                    >
+                      Descargar
+                    </button>
+                  )}
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="4">No se encontraron trámites.</td>
+              <td colSpan="6" style={{ textAlign: "center", color: "#888" }}>
+                No se encontraron trámites.
+              </td>
             </tr>
           )}
         </tbody>

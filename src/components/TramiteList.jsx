@@ -1,12 +1,29 @@
-import { useState } from 'react';
-import { api } from '../services/api';
+
+import { useTramites } from '../context/TramitesContext';
+import { sendTramiteEmail } from '../services/emailService';
+import { generatePDF } from '../utils/pdfUtils';
 
 function TramiteList() {
-  const [tramites, setTramites] = useState(api.getTramites());
+  const { tramites, updateTramiteEstado } = useTramites();
 
-  const handleUpdate = (id, status) => {
-    api.updateTramite(id, status);
-    setTramites(api.getTramites());
+  const handleUpdate = async (id, nuevoEstado) => {
+    await updateTramiteEstado(id, nuevoEstado);
+
+    const tramite = tramites.find(t => t.id === id);
+    if (tramite && tramite.email) {
+      await sendTramiteEmail({ ...tramite, estado: nuevoEstado });
+    }
+  };
+
+  const handleDownload = (tramite) => {
+    const tramiteConFechas = {
+      ...tramite,
+      tipo: tramite.tipo || tramite.tramiteType,
+      estado: tramite.estado,
+      createdAt: tramite.createdAt || new Date().toISOString(),
+      reviewedAt: new Date().toISOString(),
+    };
+    generatePDF(tramiteConFechas);
   };
 
   return (
@@ -16,15 +33,36 @@ function TramiteList() {
       ) : (
         tramites.map(tramite => (
           <div key={tramite.id} className="border p-4 rounded shadow">
-            <p><strong>Nombre:</strong> {tramite.nombre} {tramite.apellido}</p>
-            <p><strong>DNI:</strong> {tramite.dni}</p>
-            <p><strong>Tipo de trámite:</strong> {tramite.tramiteType}</p>
-            <p><strong>Detalles:</strong> {tramite.detalles}</p>
-            <p><strong>Status:</strong> {tramite.status}</p>
-            {tramite.status === 'Pendiente' && (
+            <p><strong>Nombre:</strong> {tramite.nombre || "-"}</p>
+            <p><strong>Tipo de trámite:</strong> {tramite.tipo}</p>
+            <p><strong>Detalles:</strong> {JSON.stringify(tramite.campos || {})}</p>
+            <p><strong>Estado:</strong> {tramite.estado}</p>
+
+            {tramite.estado === 'Pendiente' && (
               <div className="flex gap-2 mt-2">
-                <button className="btn bg-green-500" onClick={() => handleUpdate(tramite.id, 'Aprobado')}>Aprobar</button>
-                <button className="btn bg-red-500" onClick={() => handleUpdate(tramite.id, 'Rechazado')}>Rechazar</button>
+                <button
+                  className="btn bg-green-500 text-white px-3 py-1 rounded"
+                  onClick={() => handleUpdate(tramite.id, 'Aprobado')}
+                >
+                  Aprobar
+                </button>
+                <button
+                  className="btn bg-red-500 text-white px-3 py-1 rounded"
+                  onClick={() => handleUpdate(tramite.id, 'Rechazado')}
+                >
+                  Rechazar
+                </button>
+              </div>
+            )}
+
+            {tramite.estado === 'Aprobado' && (
+              <div className="mt-3">
+                <button
+                  className="btn bg-blue-600 text-white px-3 py-1 rounded"
+                  onClick={() => handleDownload(tramite)}
+                >
+                  Descargar PDF
+                </button>
               </div>
             )}
           </div>
@@ -35,4 +73,3 @@ function TramiteList() {
 }
 
 export default TramiteList;
-
