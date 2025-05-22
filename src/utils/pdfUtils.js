@@ -1,99 +1,152 @@
-// src/utils/pdfUtils.js
-import html2pdf from "html2pdf.js";
+import jsPDF from "jspdf";
 
 export const generatePDF = (tramite) => {
-  const element = document.createElement("div");
+  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  const campos = tramite.campos || {};
 
-  const fechaActual = new Date().toLocaleString();
+  const propietario = campos["Propietario"] || "";
+  const telefonoPropietario = campos["Teléfono"] || "";
+  const nombrePDRO = campos["Nombre del PDRO"] || "";
+  const noPDRO = campos["Número de PDRO"] || "";
+  const telefonoPDRO = campos["Teléfono PDRO"] || "";
+  const ubicacion = campos["Ubicación"] || "";
+  const lote = campos["Número de Lote"] || "";
+  const manz = campos["Manzana"] || "";
+  const secsmz = campos["Sección o Super Manzana"] || "";
+  const domicilio = campos["Domicilio de Notificación"] || "";
+  const lugar = campos.lugar || "Torreón";
+  const mes = campos.mes || "";
+  const anio = campos.anio || "";
 
-  // 👇 Si tienes un logo base64 aquí ponlo
-  const logoBase64 = ""; // ejemplo: "data:image/png;base64,iVBORw..."
+  const firma = tramite.firma;
 
-  let htmlContent = `
-    <div style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
-      <div style="text-align: center;">
-        ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" style="max-height: 80px; margin-bottom: 10px;" />` : ""}
-        <h1 style="color:#1f2937; margin-bottom: 5px;">Sistema de Trámites Digitales</h1>
-        <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
-      </div>
-
-      <hr style="margin: 20px 0;" />
-
-      <h3 style="margin-bottom:10px;">Datos del Trámite</h3>
-      <table style="width:100%; border-collapse: collapse;">
-        <tr style="background-color:#f0f4f8;">
-          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Tipo de Trámite</th>
-          <td style="padding:8px; border:1px solid #ccc;">${tramite.tipo}</td>
-        </tr>
-        <tr>
-          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Fecha de Solicitud</th>
-          <td style="padding:8px; border:1px solid #ccc;">${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td>
-        </tr>
-        <tr>
-          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Fecha de Validación</th>
-          <td style="padding:8px; border:1px solid #ccc;">${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td>
-        </tr>
-        <tr>
-          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Estado</th>
-          <td style="padding:8px; border:1px solid #ccc;">${tramite.estado}</td>
-        </tr>
-      </table>
-
-      <h3 style="margin:20px 0 10px;">Datos del Solicitante</h3>
-      <table style="width:100%; border-collapse: collapse;">
-        <tr style="background-color:#f0f4f8;">
-          <th style="padding:8px; border:1px solid #ccc; text-align:left;">Nombre Completo</th>
-          <td style="padding:8px; border:1px solid #ccc;">${tramite.solicitante || '-'}</td>
-        </tr>
-      </table>
-
-      <h3 style="margin:20px 0 10px;">Datos Adicionales</h3>
-      <table style="width:100%; border-collapse: collapse;">
-        ${Object.entries(tramite.campos || {}).map(([campo, valor]) => `
-          <tr>
-            <th style="padding:8px; border:1px solid #ccc; text-align:left; background-color:#f0f4f8;">${campo}</th>
-            <td style="padding:8px; border:1px solid #ccc;">${valor || '-'}</td>
-          </tr>
-        `).join('')}
-      </table>
-
-      <p style="margin-top:30px; font-size:12px; color:#6b7280; text-align:center;">
-        Documento generado electrónicamente. No requiere firma física.<br/>
-        Generado el: ${fechaActual}
-      </p>
-    </div>
-  `;
-
-  element.innerHTML = htmlContent;
-
-  const opt = {
-    margin: 10,
-    filename: `tramite_${tramite.tipo.replace(/\\s+/g, '_')}.pdf`,
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: "mm", format: "a4" },
+  const nuevaPagina = () => {
+    doc.addPage("letter", "portrait");
+    doc.setFontSize(12);
+    doc.setTextColor(0);
   };
 
-  html2pdf()
-    .from(element)
-    .set(opt)
-    .toPdf()
-    .get('pdf')
-    .then((pdf) => {
-      if (tramite.firma && tramite.firma.startsWith("data:image/")) {
-        pdf.addPage();
+  // Página 1: Formulario principal
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("AUTORIZACIÓN DE LOTIFICACIÓN", 105, 25, { align: "center" });
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "");
+  doc.text(`A  ${lugar}          DE  ${mes}         DE  ${anio}`, 25, 35);
 
-        pdf.setFontSize(16);
-        pdf.text("Firma del Solicitante", 105, 20, { align: "center" });
+  doc.setFont("helvetica", "bold");
+  doc.text("DATOS GENERALES", 15, 45);
+  doc.setFont("helvetica", "");
+  doc.text(`PROPIETARIO: ${propietario}           TELÉFONO: ${telefonoPropietario}`, 15, 53);
+  doc.text(`NOMBRE DEL PDRO.: ${nombrePDRO}     NO. PDRO: ${noPDRO}    TELÉFONO: ${telefonoPDRO}`, 15, 61);
+  doc.text(`UBICACIÓN: ${ubicacion}      LOTE: ${lote}      MANZ.: ${manz}     SEC/SMZ: ${secsmz}`, 15, 69);
+  doc.text(`DOMICILIO DE NOTIFICACIÓN: ${domicilio}`, 15, 77);
 
-        const imgProps = pdf.getImageProperties(tramite.firma);
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const maxWidth = 160;
-        let imgWidth = Math.min(imgProps.width, maxWidth);
-        let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-        const x = (pageWidth - imgWidth) / 2;
+  doc.setFont("helvetica", "bold");
+  doc.text("REQUISITOS", 15, 87);
+  doc.setFont("helvetica", "");
 
-        pdf.addImage(tramite.firma, "PNG", x, 30, imgWidth, imgHeight);
-      }
-    })
-    .save();
+  const requisitos = [
+    "1.- Original y copia de la solicitud de la ventanilla con firmas autógrafas.",
+    "2.- 4 planos del proyecto de lotificación con firma autógrafa del propietario y del director responsable de obra, con las características correspondientes.",
+    "3.- Factibilidad vigente de servicios expedidos por el sistema municipal de aguas y saneamientos de Torreón, Coahuila, con excepción de predios para vivienda plurifamiliar en fraccionamientos autorizados no municipalizados.",
+    "    En caso de que la factibilidad sea expedida por el sistema estatal del aguas y saneamiento (CEAS), este deberá ser ratificado por el sistema de agua de Torreón, Coahuila (SIMAS).",
+    "4.- Copia simple del recibo de CFE (electrificación).",
+    "5.- Cd con el proyecto de lotificación en programa AutoCAD 2014 Con cuadro de construcción con coordenadas UTM",
+    "6.- Plano Topográfico.",
+    "7.- Copia de identificación oficial del propietario",
+    "8.- Copia de identificación oficial del Perito Director Responsable de Obra"
+  ];
+
+  requisitos.forEach((line, i) => {
+    doc.text(line, 15, 95 + i * 6);
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.text("COSTO DE LA LOTIFICACIÓN CON BASE AL NUMERAL 2 DEL ARTÍCULO 37 DE LA LEY DE INGRESOS 2023", 15, 155);
+  doc.setFont("helvetica", "");
+
+  const tipos = [
+    ["Popular", "$ 171.00 M2"],
+    ["Interés Social", "$ 179.00 M2"],
+    ["Interés Medio", "$ 389.00 M2"],
+    ["Residencial", "$ 509.00 M2"],
+    ["Campestre", "$ 509.00 M2"],
+    ["Comercial", "$ 471.00 M2"],
+    ["Industrial", "$ 275.00 M2"]
+  ];
+
+  tipos.forEach((tipo, i) => {
+    doc.text(`${tipo[0]}         ${tipo[1]}`, 20, 165 + i * 6);
+  });
+
+  doc.setFontSize(10);
+  doc.text("EL/LA QUE SUSCRIBE BAJO PROTESTA DE DECIR VERDAD, MANIFIESTO QUE LOS DATOS AQUÍ PROPORCIONADOS, SON VERDADEROS...", 15, 210, { maxWidth: 180 });
+  doc.text("NOMBRE Y FIRMA DEL PROPIETARIO", 20, 255);
+  doc.text("NOMBRE Y FIRMA DEL PDRO. NO.", 120, 255);
+
+  // Firma imagen si existe
+  if (firma) {
+    doc.addImage(firma, "PNG", 20, 230, 40, 15);
+  }
+
+  // Página 2: Características del plano
+  nuevaPagina();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("CARACTERÍSTICAS QUE DEBERÁ TENER UN PLANO\nPROYECTO DE LOTIFICACIÓN", 105, 20, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "");
+  const caracteristicas = [
+    "1.- LOTIFICACIÓN: INDICAR LA NUMERACIÓN DE CADA MANZANA Y DE CADA UNO DE LOS LOTES,",
+    "    INCLUYENDO ESTOS SUS MEDIDAS; SUPERFICIES Y MEDIDAS DE LAS ÁREAS DE DONACIÓN; (CESIÓN)...",
+    "2.- POLÍGONO DEL TERRENO A FRACCIONAR SEGÚN ESCRITURAS Y/O APEO...",
+    "3.- CURVAS Y COTAS DE NIVEL DEL TERRENO CON REFERENCIA AL NIVEL DEL MAR.",
+    "4.- SI EL POLÍGONO A FRACCIONAR ES PORCIÓN DE UN TERRENO DE MAYOR EXTENSIÓN...",
+    "5.- SI EL TERRENO A FRACCIONAR SE COMPONE DE DOS O MÁS PREDIOS...",
+    "6.- TRAZA URBANA CIRCUNDANTE CON SUS RESPECTIVOS ACCESOS AL PREDIO...",
+    "7.- EN CASO DE EXISTIR EN EL PREDIO O EN SUS LINDEROS INSTALACIONES DE LA COMISIÓN FEDERAL DE...",
+    "8.- SECCIONES TRANSVERSALES DE LAS CALLES TIPO EN LAS QUE EL ARROYO DEBERÁ SER MÚLTIPLO DE...",
+    "9.- CROQUIS DE LOCALIZACIÓN CON REFERENCIA Y DISTANCIAS PRECISAS...",
+    "10.- CUADRO DE DISTRIBUCIÓN DE ÁREAS CONTENIENDO: ÁREA TOTAL, ÁREA VENDIBLE, ÁREA VIAL Y ÁREA DE DONACIÓN...",
+    "11.- NOMBRES PROPUESTOS A LAS CALLES."
+  ];
+
+  caracteristicas.forEach((line, i) => {
+    doc.text(line, 15, 30 + i * 6, { maxWidth: 180 });
+  });
+
+  // Página 3: Aviso de privacidad
+  nuevaPagina();
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("AVISO DE PRIVACIDAD PARA EL TRÁMITE DE AUTORIZACIÓN DE LOTIFICACIÓN", 105, 20, { align: "center" });
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "");
+
+  const aviso = [
+    "La Dirección General de Ordenamiento Territorial y Urbanismo del R. Ayuntamiento de Torreón...",
+    "La información aquí descrita es en cumplimiento del artículo 21 y 22, de la Ley de Protección de Datos...",
+    "Teléfono del Propietario. Ubicación. Domicilio de Notificación. Credencial de Elector.",
+    "Los datos personales recabados tienen como finalidad:...",
+    "Para Uso y Trámite de Autorización de Lotificación.\nPara Actualización de los Sistemas Municipales y Término del Trámite",
+    "Así mismo se informa, que la información relacionada en este trámite de autorización...",
+    "Derechos ARCO...",
+    "Este Aviso de Privacidad puede sufrir modificaciones, cambios o actualizaciones derivadas..."
+  ];
+
+  aviso.forEach((line, i) => {
+    doc.text(line, 15, 30 + i * 10, { maxWidth: 180 });
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.text("NOMBRE Y FIRMA DEL SOLICITANTE", 75, 250);
+
+  if (firma) {
+    doc.addImage(firma, "PNG", 20, 235, 40, 15);
+  }
+
+  doc.save("Autorizacion_Lotificacion.pdf");
 };
