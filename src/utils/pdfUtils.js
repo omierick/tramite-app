@@ -260,6 +260,7 @@ if (firma) {
 
   // ========== DICTAMEN DE ALINEAMIENTO VIAL ==========
   else if (tramite.tipo === "Dictamen de Alineamiento Vial") {
+    
   try {
     const propietario = campos["Propietario"] || "";
     const telefono = campos["Teléfono"] || "";
@@ -494,8 +495,93 @@ else if (tramite.tipo === "Tramiteprueba") {
   }
 
   doc.save("Tramite_Prueba.pdf");
-}
+}else if (tramite.tipo === "Licencia de Conducir") {
+  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  const campos = tramite.campos || {};
 
+  const nombre = campos["Nombre"] || "";
+  const direccion = campos["Dirección"] || "";
+  const edad = campos["Edad"] || "";
+  const tipoLicencia = campos["Tipo de Licencia"] || "";
+  const vigencia = campos["Vigencia"] || "";
+  const telefono = campos["Teléfono"] || "";
+  const firma = tramite.firma;
+
+  const now = new Date();
+  const dia = campos.dia || now.getDate();
+  const mes = campos.mes || now.toLocaleString("es-MX", { month: "long" });
+  const anio = campos.anio || now.getFullYear();
+  const lugar = campos.lugar || "Torreón";
+
+  let y = 50;
+
+  const agregarFondo = () => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.addImage(fondoImagen, "JPEG", 0, 0, pageWidth, pageHeight);
+  };
+
+  const salto = (altura = 5) => {
+    if (y + altura > 265) {
+      doc.addPage("letter", "portrait");
+      agregarFondo();
+      y = 60;
+    } else {
+      y += altura;
+    }
+  };
+
+  agregarFondo();
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("SOLICITUD DE LICENCIA DE CONDUCIR", 105, y, { align: "center" });
+  salto(10);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("FECHA Y LUGAR", 15, y);
+  doc.setFont("helvetica", "");
+  doc.rect(15, y + 2, 180, 8);
+  doc.text(`Lugar: ${lugar}    Día: ${dia}    Mes: ${mes}    Año: ${anio}`, 20, y + 8);
+  salto(14);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("DATOS DEL SOLICITANTE", 15, y);
+  salto(6);
+  doc.setFont("helvetica", "");
+
+  doc.rect(15, y, 180, 8);
+  doc.text(`Nombre: ${nombre}`, 17, y + 5);
+  salto(9);
+
+  doc.rect(15, y, 180, 8);
+  doc.text(`Dirección: ${direccion}`, 17, y + 5);
+  salto(9);
+
+  doc.rect(15, y, 90, 8);
+  doc.text(`Teléfono: ${telefono}`, 17, y + 5);
+  doc.rect(105, y, 90, 8);
+  doc.text(`Edad: ${edad}`, 107, y + 5);
+  salto(9);
+
+  doc.rect(15, y, 90, 8);
+  doc.text(`Tipo de Licencia: ${tipoLicencia}`, 17, y + 5);
+  doc.rect(105, y, 90, 8);
+  doc.text(`Vigencia: ${vigencia}`, 107, y + 5);
+  salto(14);
+
+  doc.setFont("helvetica", "bold");
+  doc.text("FIRMA DEL SOLICITANTE", 15, y);
+  salto(20);
+
+  if (firma) {
+    doc.addImage(firma, "PNG", 20, y, 50, 20);
+    salto(25);
+  }
+
+  doc.save("Licencia_Conducir.pdf");
+}
 
   // ... aquí puedes seguir con más tipos de trámite usando la misma estructura
 };
