@@ -6,7 +6,6 @@ export const generatePDF = (tramite) => {
   const campos = tramite.campos || {};
   const now = new Date();
 
-  // Helpers
   const agregarFondo = () => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -15,7 +14,7 @@ export const generatePDF = (tramite) => {
 
   const nuevaPagina = () => {
     doc.addPage("letter", "portrait");
-    doc.setFontSize(12);
+    doc.setFontSize(9);
     doc.setTextColor(0);
     agregarFondo();
     return 60;
@@ -29,22 +28,24 @@ export const generatePDF = (tramite) => {
     else y += altura;
   };
 
-  // ========== AUTORIZACIÓN DE LOTIFICACIÓN ==========
   if (tramite.tipo === "Autorización de Lotificación") {
-    const propietario = campos["Propietario"] || "";
-    const telefonoPropietario = campos["Teléfono"] || "";
-    const nombrePDRO = campos["Nombre del PDRO"] || "";
-    const noPDRO = campos["Número de PDRO"] || "";
-    const telefonoPDRO = campos["Teléfono PDRO"] || "";
-    const ubicacion = campos["Ubicación"] || "";
-    const lote = campos["Número de Lote"] || "";
-    const manz = campos["Manzana"] || "";
-    const secsmz = campos["Sección o Super Manzana"] || "";
-    const domicilio = campos["Domicilio de Notificación"] || "";
-    const dia = campos.dia || now.getDate();
-    const mes = campos.mes || now.toLocaleString("es-MX", { month: "long" });
-    const anio = campos.anio || now.getFullYear();
-    const lugar = campos.lugar || "Torreón";
+    const {
+      "Propietario": propietario = "",
+      "Teléfono": telefonoPropietario = "",
+      "Nombre del PDRO": nombrePDRO = "",
+      "Número de PDRO": noPDRO = "",
+      "Teléfono PDRO": telefonoPDRO = "",
+      "Ubicación": ubicacion = "",
+      "Número de Lote": lote = "",
+      "Manzana": manz = "",
+      "Sección o Super Manzana": secsmz = "",
+      "Domicilio de Notificación": domicilio = "",
+      dia = now.getDate(),
+      mes = now.toLocaleString("es-MX", { month: "long" }),
+      anio = now.getFullYear(),
+      lugar = "Torreón"
+    } = campos;
+
     const firma = tramite.firma;
 
     doc.setFont("helvetica", "bold");
@@ -52,8 +53,8 @@ export const generatePDF = (tramite) => {
     doc.text("AUTORIZACIÓN DE LOTIFICACIÓN", 105, y, { align: "center" });
     salto(10);
 
-    doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
     doc.text("FECHA Y LUGAR", 15, y);
     doc.setFont("helvetica", "");
     doc.rect(15, y + 2, 180, 8);
@@ -64,34 +65,28 @@ export const generatePDF = (tramite) => {
     doc.text("DATOS GENERALES", 15, y);
     salto(6);
     doc.setFont("helvetica", "");
-    doc.setFontSize(10);
 
-    doc.rect(15, y, 100, 8);
-    doc.text(`Propietario: ${propietario}`, 17, y + 5);
-    doc.rect(115, y, 80, 8);
-    doc.text(`Teléfono: ${telefonoPropietario}`, 117, y + 5);
+    const drawCampo = (x, w, label, valor) => {
+      doc.rect(x, y, w, 8);
+      doc.text(`${label}: ${valor}`, x + 2, y + 5);
+    };
+
+    drawCampo(15, 100, "Propietario", propietario);
+    drawCampo(115, 80, "Teléfono", telefonoPropietario);
     salto(9);
 
-    doc.rect(15, y, 80, 8);
-    doc.text(`Nombre PDRO: ${nombrePDRO}`, 17, y + 5);
-    doc.rect(95, y, 50, 8);
-    doc.text(`No. PDRO: ${noPDRO}`, 97, y + 5);
-    doc.rect(145, y, 50, 8);
-    doc.text(`Teléfono: ${telefonoPDRO}`, 147, y + 5);
+    drawCampo(15, 80, "Nombre PDRO", nombrePDRO);
+    drawCampo(95, 50, "No. PDRO", noPDRO);
+    drawCampo(145, 50, "Teléfono", telefonoPDRO);
     salto(9);
 
-    doc.rect(15, y, 100, 8);
-    doc.text(`Ubicación: ${ubicacion}`, 17, y + 5);
-    doc.rect(115, y, 25, 8);
-    doc.text(`Lote: ${lote}`, 117, y + 5);
-    doc.rect(140, y, 30, 8);
-    doc.text(`Manz.: ${manz}`, 142, y + 5);
-    doc.rect(170, y, 25, 8);
-    doc.text(`Sec/Smz: ${secsmz}`, 172, y + 5);
+    drawCampo(15, 100, "Ubicación", ubicacion);
+    drawCampo(115, 25, "Lote", lote);
+    drawCampo(140, 30, "Manz.", manz);
+    drawCampo(170, 25, "Sec/Smz", secsmz);
     salto(9);
 
-    doc.rect(15, y, 180, 8);
-    doc.text(`Domicilio de Notificación: ${domicilio}`, 17, y + 5);
+    drawCampo(15, 180, "Domicilio de Notificación", domicilio);
     salto(14);
 
     doc.setFont("helvetica", "bold");
@@ -102,8 +97,7 @@ export const generatePDF = (tramite) => {
     const requisitos = [
       "1.- Original y copia de la solicitud de la ventanilla con firmas autógrafas.",
       "2.- 4 planos del proyecto de lotificación con firma autógrafa del propietario y del director responsable de obra, con las características correspondientes.",
-      "3.- Factibilidad vigente de servicios expedidos por el sistema municipal de aguas y saneamientos de Torreón, Coahuila, con excepción de predios para vivienda plurifamiliar en fraccionamientos autorizados no municipalizados.",
-      "    En caso de que la factibilidad sea expedida por el sistema estatal del aguas y saneamiento (CEAS), este deberá ser ratificado por el sistema de agua de Torreón, Coahuila (SIMAS).",
+      "3.- Factibilidad vigente de servicios expedidos por el sistema municipal de aguas y saneamientos de Torreón, Coahuila, con excepción de predios para vivienda plurifamiliar en fraccionamientos autorizados no municipalizados. En caso de que la factibilidad sea expedida por el sistema estatal del aguas y saneamiento (CEAS), este deberá ser ratificado por el sistema de agua de Torreón, Coahuila (SIMAS).",
       "4.- Copia simple del recibo de CFE (electrificación).",
       "5.- CD con el proyecto de lotificación en programa AutoCAD 2014 con cuadro de construcción con coordenadas UTM.",
       "6.- Plano Topográfico.",
@@ -112,81 +106,102 @@ export const generatePDF = (tramite) => {
     ];
 
     requisitos.forEach((line) => {
-      doc.text(line, 15, y);
-      salto(5);
+      const splitted = doc.splitTextToSize(line, 180);
+      if (y + splitted.length * 4.5 > 265) y = nuevaPagina();
+      doc.text(splitted, 15, y);
+      y += splitted.length * 4.5;
     });
 
     doc.setFont("helvetica", "bold");
-    doc.text("COSTO DE LA LOTIFICACIÓN CON BASE AL NUMERAL 2 DEL ARTÍCULO 37 DE LA LEY DE INGRESOS 2023", 15, y);
-    salto(6);
-    doc.setFont("helvetica", "");
+doc.setFontSize(8);
+doc.text("COSTO DE LA LOTIFICACIÓN CON BASE AL NUMERAL 2 DEL ARTÍCULO 37 DE LA LEY DE INGRESOS 2023", 15, y);
+salto(5);
+doc.setFont("helvetica", "");
 
-    const tipos = [
-      ["Popular", "$ 171.00 M2"],
-      ["Interés Social", "$ 179.00 M2"],
-      ["Interés Medio", "$ 389.00 M2"],
-      ["Residencial", "$ 509.00 M2"],
-      ["Campestre", "$ 509.00 M2"],
-      ["Comercial", "$ 471.00 M2"],
-      ["Industrial", "$ 275.00 M2"]
-    ];
+const tipos = [
+  ["Popular", "$ 171.00 M2"],
+  ["Interés Social", "$ 179.00 M2"],
+  ["Interés Medio", "$ 389.00 M2"],
+  ["Residencial", "$ 509.00 M2"],
+  ["Campestre", "$ 509.00 M2"],
+  ["Comercial", "$ 471.00 M2"],
+  ["Industrial", "$ 275.00 M2"]
+];
 
-    doc.setFont("helvetica", "bold");
-    doc.rect(20, y, 85, 7);
-    doc.text("TIPO DE LOTIFICACIÓN", 22, y + 5);
-    doc.rect(105, y, 50, 7);
-    doc.text("COSTO POR M2", 107, y + 5);
-    salto(7);
-    doc.setFont("helvetica", "");
+// Cabecera
+doc.setFont("helvetica", "bold");
+const col1X = 20;
+const col2X = 105;
+const rowHeight = 5;
 
-    tipos.forEach((tipo) => {
-      doc.rect(20, y, 85, 7);
-      doc.text(tipo[0], 22, y + 5);
-      doc.rect(105, y, 50, 7);
-      doc.text(tipo[1], 107, y + 5);
-      salto(7);
-    });
+doc.rect(col1X, y, 85, rowHeight);
+doc.text("TIPO DE LOTIFICACIÓN", col1X + 2, y + 3.5);
+doc.rect(col2X, y, 50, rowHeight);
+doc.text("COSTO POR M2", col2X + 2, y + 3.5);
+salto(rowHeight);
+
+// Contenido
+doc.setFont("helvetica", "");
+tipos.forEach((tipo) => {
+  doc.rect(col1X, y, 85, rowHeight);
+  doc.text(tipo[0], col1X + 2, y + 3.5);
+  doc.rect(col2X, y, 50, rowHeight);
+  doc.text(tipo[1], col2X + 2, y + 3.5);
+  salto(rowHeight);
+});
+
+
+    // === FIRMAS EN LA HOJA 1 ===
     salto(5);
+    if (y + 35 > 265) y = nuevaPagina();
+
     doc.setFontSize(9);
     doc.text("EL/LA QUE SUSCRIBE BAJO PROTESTA DE DECIR VERDAD, MANIFIESTO QUE LOS DATOS AQUÍ PROPORCIONADOS, SON VERDADEROS...", 15, y, { maxWidth: 180 });
-    salto(20);
+    salto(10);
 
-    doc.text("NOMBRE Y FIRMA DEL PROPIETARIO", 20, y);
-    doc.text("NOMBRE Y FIRMA DEL PDRO. NO.", 120, y);
+    doc.text("NOMBRE Y FIRMA DEL PROPIETARIO", 20, y + 25);
+    doc.text("NOMBRE Y FIRMA DEL PDRO. NO.", 120, y + 25);
+    doc.line(20, y + 20, 80, y + 20);
+    doc.line(120, y + 20, 180, y + 20);
 
     if (firma) {
-      doc.addImage(firma, "PNG", 20, y - 20, 40, 15);
+      doc.addImage(firma, "PNG", 20, y, 40, 15);
     }
 
     y = nuevaPagina();
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("CARACTERÍSTICAS QUE DEBERÁ TENER UN PLANO\nPROYECTO DE LOTIFICACIÓN", 105, y, { align: "center" });
-    salto(12);
+doc.setFont("helvetica", "bold");
+doc.setFontSize(14);
+doc.text("CARACTERÍSTICAS QUE DEBERÁ TENER UN PLANO\nPROYECTO DE LOTIFICACIÓN", 105, y, { align: "center" });
+salto(12);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "");
+doc.setFontSize(9);
+doc.setFont("helvetica", "");
 
-    const caracteristicas = [
-      "1.- LOTIFICACIÓN: INDICAR LA NUMERACIÓN DE CADA MANZANA Y DE CADA UNO DE LOS LOTES,",
-      "    INCLUYENDO ESTOS SUS MEDIDAS; SUPERFICIES Y MEDIDAS DE LAS ÁREAS DE DONACIÓN; (CESIÓN)...",
-      "2.- POLÍGONO DEL TERRENO A FRACCIONAR SEGÚN ESCRITURAS Y/O APEO...",
-      "3.- CURVAS Y COTAS DE NIVEL DEL TERRENO CON REFERENCIA AL NIVEL DEL MAR.",
-      "4.- SI EL POLÍGONO A FRACCIONAR ES PORCIÓN DE UN TERRENO DE MAYOR EXTENSIÓN...",
-      "5.- SI EL TERRENO A FRACCIONAR SE COMPONE DE DOS O MÁS PREDIOS...",
-      "6.- TRAZA URBANA CIRCUNDANTE CON SUS RESPECTIVOS ACCESOS AL PREDIO...",
-      "7.- EN CASO DE EXISTIR EN EL PREDIO O EN SUS LINDEROS INSTALACIONES DE LA COMISIÓN FEDERAL DE...",
-      "8.- SECCIONES TRANSVERSALES DE LAS CALLES TIPO EN LAS QUE EL ARROYO DEBERÁ SER MÚLTIPLO DE...",
-      "9.- CROQUIS DE LOCALIZACIÓN CON REFERENCIA Y DISTANCIAS PRECISAS...",
-      "10.- CUADRO DE DISTRIBUCIÓN DE ÁREAS CONTENIENDO: ÁREA TOTAL, ÁREA VENDIBLE, ÁREA VIAL Y ÁREA DE DONACIÓN...",
-      "11.- NOMBRES PROPUESTOS A LAS CALLES."
-    ];
+const caracteristicas = [
+  "1.- LOTIFICACIÓN: INDICAR LA NUMERACIÓN DE CADA MANZANA Y DE CADA UNO DE LOS LOTES,",
+  "    INCLUYENDO ESTOS SUS MEDIDAS; SUPERFICIES Y MEDIDAS DE LAS ÁREAS DE DONACIÓN; (CESIÓN)...",
+  "2.- POLÍGONO DEL TERRENO A FRACCIONAR SEGÚN ESCRITURAS Y/O APEO...",
+  "3.- CURVAS Y COTAS DE NIVEL DEL TERRENO CON REFERENCIA AL NIVEL DEL MAR.",
+  "4.- SI EL POLÍGONO A FRACCIONAR ES PORCIÓN DE UN TERRENO DE MAYOR EXTENSIÓN...",
+  "5.- SI EL TERRENO A FRACCIONAR SE COMPONE DE DOS O MÁS PREDIOS...",
+  "6.- TRAZA URBANA CIRCUNDANTE CON SUS RESPECTIVOS ACCESOS AL PREDIO...",
+  "7.- EN CASO DE EXISTIR EN EL PREDIO O EN SUS LINDEROS INSTALACIONES DE LA COMISIÓN FEDERAL DE...",
+  "8.- SECCIONES TRANSVERSALES DE LAS CALLES TIPO EN LAS QUE EL ARROYO DEBERÁ SER MÚLTIPLO DE...",
+  "9.- CROQUIS DE LOCALIZACIÓN CON REFERENCIA Y DISTANCIAS PRECISAS...",
+  "10.- CUADRO DE DISTRIBUCIÓN DE ÁREAS CONTENIENDO: ÁREA TOTAL, ÁREA VENDIBLE, ÁREA VIAL Y ÁREA DE DONACIÓN...",
+  "11.- NOMBRES PROPUESTOS A LAS CALLES."
+];
 
-    caracteristicas.forEach((line) => {
-      doc.text(line, 15, y);
-      salto(5);
-    });
+caracteristicas.forEach((line) => {
+  const splitted = doc.splitTextToSize(line, 180); // Ajusta al ancho útil
+  const alturaBloque = splitted.length * 4.5;
+
+  if (y + alturaBloque > 265) y = nuevaPagina();
+
+  doc.text(splitted, 15, y);
+  y += alturaBloque;
+});
 
     y = nuevaPagina();
 
@@ -222,13 +237,13 @@ const firmaHeight = 15;
 const firmaX = (pageWidth - firmaWidth) / 2;
 const firmaY = 230; // posición de la firma
 
-// Línea más arriba (por ejemplo, 10mm arriba del texto)
+// Línea más arriba
 const lineaWidth = 60;
 const lineaX = (pageWidth - lineaWidth) / 2;
-const lineaY = 242; // más arriba del texto
+const lineaY = 242;
 
-// Línea gruesa centrada arriba del texto
-doc.setLineWidth(0.8); // grosor de línea (más grueso)
+// Línea delgada centrada (grosor igual a las otras firmas)
+doc.setLineWidth(0.2); // grosor uniforme con otras firmas
 doc.line(lineaX, lineaY, lineaX + lineaWidth, lineaY);
 
 // Texto centrado
