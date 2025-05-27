@@ -214,12 +214,31 @@ export const generatePDF = (tramite) => {
       salto(10);
     });
 
-    doc.setFont("helvetica", "bold");
-    doc.text("NOMBRE Y FIRMA DEL SOLICITANTE", 75, 250);
+const pageWidth = doc.internal.pageSize.getWidth();
 
-    if (firma) {
-      doc.addImage(firma, "PNG", 20, 235, 40, 15);
-    }
+// Parámetros
+const firmaWidth = 40;
+const firmaHeight = 15;
+const firmaX = (pageWidth - firmaWidth) / 2;
+const firmaY = 230; // posición de la firma
+
+// Línea más arriba (por ejemplo, 10mm arriba del texto)
+const lineaWidth = 60;
+const lineaX = (pageWidth - lineaWidth) / 2;
+const lineaY = 242; // más arriba del texto
+
+// Línea gruesa centrada arriba del texto
+doc.setLineWidth(0.8); // grosor de línea (más grueso)
+doc.line(lineaX, lineaY, lineaX + lineaWidth, lineaY);
+
+// Texto centrado
+doc.setFont("helvetica", "bold");
+doc.text("NOMBRE Y FIRMA DEL SOLICITANTE", pageWidth / 2, 250, { align: "center" });
+
+// Firma centrada
+if (firma) {
+  doc.addImage(firma, "PNG", firmaX, firmaY, firmaWidth, firmaHeight);
+}
 
     doc.save("Autorizacion_Lotificacion.pdf");
   }
