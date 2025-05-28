@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -23,7 +22,7 @@ const UserDashboard = ({ setRole }) => {
     nombreUsuario,
     setNombreUsuario,
     addTramite,
-    updateTramiteCampos
+    updateTramiteCampos,
   } = useTramites();
 
   const [tramiteSeleccionadoId, setTramiteSeleccionadoId] = useState("");
@@ -31,20 +30,21 @@ const UserDashboard = ({ setRole }) => {
   const [formData, setFormData] = useState({});
   const [firma, setFirma] = useState(null);
   const [editandoTramite, setEditandoTramite] = useState(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(true);
 
   const {
     register,
     handleSubmit,
     setValue,
     getValues,
-    formState: { errors }
+    formState: { errors },
   } = useForm({
     resolver: yupResolver(schema),
   });
 
   useEffect(() => {
     if (!nombreUsuario && tramites.length > 0) {
-      const tramiteConNombre = tramites.find(t => t.solicitante);
+      const tramiteConNombre = tramites.find((t) => t.solicitante);
       if (tramiteConNombre) {
         setNombreUsuario(tramiteConNombre.solicitante);
       }
@@ -57,11 +57,11 @@ const UserDashboard = ({ setRole }) => {
 
   const handleSelectSubmit = (e) => {
     e.preventDefault();
-    const tipo = tiposTramite.find(tipo => tipo.id.toString() === tramiteSeleccionadoId);
+    const tipo = tiposTramite.find((tipo) => tipo.id.toString() === tramiteSeleccionadoId);
     if (tipo) {
       setSelectedTipo(tipo);
       const initialData = {};
-      tipo.campos.forEach(campo => {
+      tipo.campos.forEach((campo) => {
         initialData[campo] = "";
       });
       setFormData(initialData);
@@ -97,14 +97,14 @@ const UserDashboard = ({ setRole }) => {
       setEditandoTramite(null);
     } else {
       const nuevoTramite = {
-  tipo: selectedTipo.nombre,
-  campos: formData,
-  firma,
-  estado: "Pendiente",
-  solicitante: nombreUsuario,
-  email,
-  createdAt: new Date().toISOString(), // 🟢 asegúrate de incluir esto
-};
+        tipo: selectedTipo.nombre,
+        campos: formData,
+        firma,
+        estado: "Pendiente",
+        solicitante: nombreUsuario,
+        email,
+        createdAt: new Date().toISOString(),
+      };
       await addTramite(nuevoTramite);
       await sendTramiteEmail(nuevoTramite);
       toast.success("¡Trámite enviado correctamente!");
@@ -122,7 +122,7 @@ const UserDashboard = ({ setRole }) => {
 
   const handleEditarTramite = (tramite) => {
     setEditandoTramite(tramite);
-    setSelectedTipo(tiposTramite.find(t => t.nombre === tramite.tipo));
+    setSelectedTipo(tiposTramite.find((t) => t.nombre === tramite.tipo));
     setFormData(tramite.campos);
   };
 
@@ -137,10 +137,8 @@ const UserDashboard = ({ setRole }) => {
     generatePDF(tramiteConFechas);
   };
 
-  const [mostrarFormulario, setMostrarFormulario] = useState(true);
-
   const tramitesUsuario = useMemo(() => {
-    return tramites.filter(t => t.solicitante === nombreUsuario);
+    return tramites.filter((t) => t.solicitante === nombreUsuario);
   }, [tramites, nombreUsuario]);
 
   return (
@@ -148,10 +146,14 @@ const UserDashboard = ({ setRole }) => {
       <Navbar />
       <div className="user-container">
         <h2>Mis Trámites</h2>
-        <button onClick={() => {
-          setNombreUsuario("");
-          setMostrarFormulario(true);
-        }} className="btn-secondary" style={{ marginBottom: "1rem" }}>
+        <button
+          onClick={() => {
+            setNombreUsuario("");
+            setMostrarFormulario(true);
+          }}
+          className="btn-secondary"
+          style={{ marginBottom: "1rem" }}
+        >
           Cambiar nombre y correo
         </button>
 
@@ -186,7 +188,11 @@ const UserDashboard = ({ setRole }) => {
           </div>
         ) : editandoTramite || selectedTipo ? (
           <form className="tramite-form" onSubmit={handleSubmit(onSubmit)}>
-            <h3>{editandoTramite ? "Editar Trámite Rechazado" : `Nuevo Trámite: ${selectedTipo.nombre}`}</h3>
+            <h3>
+              {editandoTramite
+                ? "Editar Trámite Rechazado"
+                : `Nuevo Trámite: ${selectedTipo.nombre}`}
+            </h3>
 
             {selectedTipo.campos.map((campo, idx) => (
               <div key={idx} className="form-group">
@@ -202,10 +208,12 @@ const UserDashboard = ({ setRole }) => {
 
             <div className="form-group">
               <label>Firma del solicitante:</label>
-              <FirmaCanvas setFirma={(firmaData) => {
-                setFirma(firmaData);
-                setValue("firma", firmaData);
-              }} />
+              <FirmaCanvas
+                setFirma={(firmaData) => {
+                  setFirma(firmaData);
+                  setValue("firma", firmaData);
+                }}
+              />
             </div>
 
             {errors.firma && <p className="error">{errors.firma.message}</p>}
@@ -218,7 +226,11 @@ const UserDashboard = ({ setRole }) => {
           <form className="tramite-form" onSubmit={handleSelectSubmit}>
             <div className="form-group">
               <label>Selecciona un tipo de trámite:</label>
-              <select onChange={handleSelectChange} value={tramiteSeleccionadoId} required>
+              <select
+                onChange={handleSelectChange}
+                value={tramiteSeleccionadoId}
+                required
+              >
                 <option value="">-- Selecciona un trámite --</option>
                 {tiposTramite.map((tipo) => (
                   <option key={tipo.id} value={tipo.id}>
@@ -227,7 +239,9 @@ const UserDashboard = ({ setRole }) => {
                 ))}
               </select>
             </div>
-            <button className="btn-primary" type="submit">Continuar</button>
+            <button className="btn-primary" type="submit">
+              Continuar
+            </button>
           </form>
         )}
 
@@ -246,19 +260,27 @@ const UserDashboard = ({ setRole }) => {
                 {tramitesUsuario.map((tramite) => (
                   <tr key={tramite.id}>
                     <td>{tramite.tipo}</td>
-<td className={`estado ${tramite.estado.toLowerCase()}`}>
-  <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
-  {tramite.estado === "Aprobado" && tramite.reviewedAt && (
-    <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
-      <i className="fas fa-calendar-check" style={{ marginRight: "4px" }}></i>
-      {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
-      })}
-    </div>
-  )}
-</td>
+                    <td className={`estado ${tramite.estado.toLowerCase()}`}>
+                      <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
+
+                      {tramite.estado === "Aprobado" && tramite.reviewedAt && (
+                        <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
+                          <i className="fas fa-calendar-check" style={{ marginRight: "4px" }}></i>
+                          {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric"
+                          })}
+                        </div>
+                      )}
+
+                      {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
+                        <div style={{ fontSize: "0.8rem", color: "#c00", marginTop: "4px" }}>
+                          <i className="fas fa-info-circle" style={{ marginRight: "4px" }}></i>
+                          <strong>Motivo:</strong> {tramite.comentario_revisor}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       {tramite.estado === "Rechazado" && (
                         <button
