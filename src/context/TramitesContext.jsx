@@ -80,20 +80,29 @@ export const TramitesProvider = ({ children }) => {
   };
 
   
-  const updateTramiteEstado = async (id, nuevoEstado) => {
+  const updateTramiteEstado = async (id, nuevoEstado, comentario = "") => {
+  const camposActualizados = {
+    estado: nuevoEstado,
+    reviewedAt: new Date().toISOString(),
+  };
+
+  // Guarda comentario si existe
+  if (comentario) {
+    camposActualizados.comentario_revisor = comentario;
+  }
+
   const { data, error } = await supabase
     .from("tramites")
-    .update({
-      estado: nuevoEstado,
-      reviewedAt: new Date().toISOString(), // 🟢 esto es lo que debe agregarse
-    })
+    .update(camposActualizados)
     .eq("id", id)
     .select();
 
   if (error) {
     console.error("Error actualizando estado del trámite:", error);
   } else if (data && data.length > 0) {
-    setTramites(prev => prev.map(t => (t.id === id ? { ...t, ...data[0] } : t)));
+    setTramites((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...data[0] } : t))
+    );
   }
 };
 
