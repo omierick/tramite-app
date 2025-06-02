@@ -581,7 +581,146 @@ else if (tramite.tipo === "Tramiteprueba") {
   }
 
   doc.save("Licencia_Conducir.pdf");
+}else {
+  import("html2pdf.js").then((html2pdf) => {
+    const element = document.createElement("div");
+    const fechaActual = new Date().toLocaleString();
+    const fondoBase64 = fondoImagen;
+
+    const camposHTML = Object.entries(tramite.campos || {})
+      .map(([campo, valor]) => `
+        <tr>
+          <th>${campo}</th>
+          <td>${valor || '-'}</td>
+        </tr>
+      `)
+      .join('');
+
+    const firmaPage = tramite.firma && tramite.firma.startsWith("data:image/")
+      ? `
+        <div class="page firma-page">
+          <div class="contenido">
+            <div style="text-align: center;">
+              <h1 style="margin-top: 80px;">Firma del Solicitante</h1>
+              <img src="${tramite.firma}" alt="Firma" style="margin-top: 40px; max-width: 400px; max-height: 200px;" />
+            </div>
+          </div>
+        </div>
+      `
+      : "";
+
+    const htmlContent = `
+      <style>
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        .page {
+          width: 794px;
+          height: 1122px;
+          font-family: Arial, sans-serif;
+          color: #111;
+          padding: 130px 40px 40px 40px;
+          box-sizing: border-box;
+          background-image: url('${fondoBase64}');
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          overflow: hidden;
+        }
+
+        .contenido {
+          position: relative;
+          z-index: 1;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 15px;
+        }
+
+        th, td {
+          padding: 8px;
+          border: 1px solid #ccc;
+        }
+
+        th {
+          background-color: #f0f4f8;
+          text-align: left;
+        }
+
+        h1, h3 {
+          margin: 10px 0;
+        }
+
+        .footer {
+          font-size: 12px;
+          color: #6b7280;
+          text-align: center;
+          margin-top: 40px;
+        }
+
+        .firma-page {
+          page-break-before: always;
+        }
+      </style>
+
+      <div class="page">
+        <div class="contenido">
+          <div style="text-align: center;">
+            <h1>Sistema de Trámites Digitales</h1>
+            <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
+          </div>
+
+          <hr style="margin: 20px 0;" />
+
+          <h3>Datos del Trámite</h3>
+          <table>
+            <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
+            <tr><th>Fecha de Solicitud</th><td>${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td></tr>
+            <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td></tr>
+            <tr><th>Estado</th><td>${tramite.estado}</td></tr>
+          </table>
+
+          <h3>Solicitante</h3>
+          <table>
+            <tr><th>Nombre</th><td>${tramite.solicitante || '-'}</td></tr>
+          </table>
+
+          <h3>Información del Solicitante</h3>
+          <table>
+            ${camposHTML}
+          </table>
+
+          <div class="footer">
+            Documento generado electrónicamente. No requiere firma física.<br/>
+            Generado el: ${fechaActual}
+          </div>
+        </div>
+      </div>
+
+      ${firmaPage}
+    `;
+
+    element.innerHTML = htmlContent;
+
+    const opt = {
+      margin: 0,
+      filename: `tramite_${tramite.tipo.replace(/\s+/g, '_')}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "a4" },
+    };
+
+    html2pdf.default()
+      .from(element)
+      .set(opt)
+      .save();
+  });
 }
+
+
 
   // ... aquí puedes seguir con más tipos de trámite usando la misma estructura
 };
