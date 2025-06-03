@@ -596,13 +596,13 @@ else if (tramite.tipo === "Tramiteprueba") {
       `)
       .join('');
 
-    const firmaPage = tramite.firma && tramite.firma.startsWith("data:image/")
+    const firmaHTML = tramite.firma && tramite.firma.startsWith("data:image/")
       ? `
-        <div class="page firma-page">
+        <div class="page">
           <div class="contenido">
-            <div style="text-align: center;">
-              <h1 style="margin-top: 80px;">Firma del Solicitante</h1>
-              <img src="${tramite.firma}" alt="Firma" style="margin-top: 40px; max-width: 400px; max-height: 200px;" />
+            <div style="text-align: center; margin-top: 140px;">
+              <h1 style="margin-bottom: 40px;">Firma del Solicitante</h1>
+              <img src="${tramite.firma}" alt="Firma" style="max-width: 400px; max-height: 200px;" />
             </div>
           </div>
         </div>
@@ -611,11 +611,6 @@ else if (tramite.tipo === "Tramiteprueba") {
 
     const htmlContent = `
       <style>
-        body {
-          margin: 0;
-          padding: 0;
-        }
-
         .page {
           width: 794px;
           height: 1122px;
@@ -661,47 +656,45 @@ else if (tramite.tipo === "Tramiteprueba") {
           text-align: center;
           margin-top: 40px;
         }
-
-        .firma-page {
-          page-break-before: always;
-        }
       </style>
 
-      <div class="page">
-        <div class="contenido">
-          <div style="text-align: center;">
-            <h1>Sistema de Trámites Digitales</h1>
-            <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
-          </div>
+      <div id="pdf-root">
+        <div class="page">
+          <div class="contenido">
+            <div style="text-align: center;">
+              <h1>Sistema de Trámites Digitales</h1>
+              <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
+            </div>
 
-          <hr style="margin: 20px 0;" />
+            <hr style="margin: 20px 0;" />
 
-          <h3>Datos del Trámite</h3>
-          <table>
-            <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
-            <tr><th>Fecha de Solicitud</th><td>${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td></tr>
-            <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td></tr>
-            <tr><th>Estado</th><td>${tramite.estado}</td></tr>
-          </table>
+            <h3>Datos del Trámite</h3>
+            <table>
+              <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
+              <tr><th>Fecha de Solicitud</th><td>${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td></tr>
+              <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td></tr>
+              <tr><th>Estado</th><td>${tramite.estado}</td></tr>
+            </table>
 
-          <h3>Solicitante</h3>
-          <table>
-            <tr><th>Nombre</th><td>${tramite.solicitante || '-'}</td></tr>
-          </table>
+            <h3>Solicitante</h3>
+            <table>
+              <tr><th>Nombre</th><td>${tramite.solicitante || '-'}</td></tr>
+            </table>
 
-          <h3>Información del Solicitante</h3>
-          <table>
-            ${camposHTML}
-          </table>
+            <h3>Campos adicionales</h3>
+            <table>
+              ${camposHTML}
+            </table>
 
-          <div class="footer">
-            Documento generado electrónicamente. No requiere firma física.<br/>
-            Generado el: ${fechaActual}
+            <div class="footer">
+              Documento generado electrónicamente. No requiere firma física.<br/>
+              Generado el: ${fechaActual}
+            </div>
           </div>
         </div>
-      </div>
 
-      ${firmaPage}
+        ${firmaHTML}
+      </div>
     `;
 
     element.innerHTML = htmlContent;
