@@ -585,7 +585,7 @@ else if (tramite.tipo === "Tramiteprueba") {
   import("html2pdf.js").then((html2pdf) => {
     const element = document.createElement("div");
     const fechaActual = new Date().toLocaleString();
-    const fondoBase64 = fondoImagen;
+    const logoPath = "src/assets/logo3.png";
 
     const camposHTML = Object.entries(tramite.campos || {})
       .map(([campo, valor]) => `
@@ -598,47 +598,54 @@ else if (tramite.tipo === "Tramiteprueba") {
 
     const firmaHTML = tramite.firma && tramite.firma.startsWith("data:image/")
       ? `
-        <div class="page">
-          <div class="contenido">
-            <div style="text-align: center; margin-top: 140px;">
-              <h1 style="margin-bottom: 40px;">Firma del Solicitante</h1>
-              <img src="${tramite.firma}" alt="Firma" style="max-width: 400px; max-height: 200px;" />
-            </div>
-          </div>
+        <div class="firma">
+          <h2>Firma del Solicitante</h2>
+          <img src="${tramite.firma}" alt="Firma" style="max-width: 300px; max-height: 150px;" />
         </div>
       `
       : "";
 
     const htmlContent = `
       <style>
-        .page {
-          width: 794px;
-          height: 1122px;
+        html, body {
+          margin: 0;
+          padding: 0;
           font-family: Arial, sans-serif;
           color: #111;
-          padding: 130px 40px 40px 40px;
-          box-sizing: border-box;
-          background-image: url('${fondoBase64}');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          overflow: hidden;
         }
 
-        .contenido {
-          position: relative;
-          z-index: 1;
+        #pdf-root {
+          width: 794px;
+          padding: 60px 40px;
+          box-sizing: border-box;
+        }
+
+        .encabezado {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+
+        .encabezado img {
+          height: 80px;
+          margin-bottom: 10px;
+        }
+
+        .encabezado h1 {
+          margin: 0;
+          font-size: 20px;
         }
 
         table {
           width: 100%;
           border-collapse: collapse;
           margin-bottom: 15px;
+          page-break-inside: auto;
         }
 
         th, td {
           padding: 8px;
           border: 1px solid #ccc;
+          vertical-align: top;
         }
 
         th {
@@ -646,54 +653,73 @@ else if (tramite.tipo === "Tramiteprueba") {
           text-align: left;
         }
 
-        h1, h3 {
+        h1, h2, h3 {
           margin: 10px 0;
+          page-break-after: avoid;
+        }
+
+        .firma {
+          text-align: center;
+          margin-top: 50px;
+          page-break-before: auto;
         }
 
         .footer {
           font-size: 12px;
           color: #6b7280;
           text-align: center;
-          margin-top: 40px;
+          margin-top: 60px;
+        }
+
+        tr {
+          break-inside: avoid;
+        }
+
+        /* 🔥 Espaciado superior efectivo en cada página nueva */
+        @media print {
+          body {
+            padding-top: 40px;
+          }
         }
       </style>
 
       <div id="pdf-root">
-        <div class="page">
-          <div class="contenido">
-            <div style="text-align: center;">
-              <h1>Sistema de Trámites Digitales</h1>
-              <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
-            </div>
-
-            <hr style="margin: 20px 0;" />
-
-            <h3>Datos del Trámite</h3>
-            <table>
-              <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
-              <tr><th>Fecha de Solicitud</th><td>${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td></tr>
-              <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td></tr>
-              <tr><th>Estado</th><td>${tramite.estado}</td></tr>
-            </table>
-
-            <h3>Solicitante</h3>
-            <table>
-              <tr><th>Nombre</th><td>${tramite.solicitante || '-'}</td></tr>
-            </table>
-
-            <h3>Campos adicionales</h3>
-            <table>
-              ${camposHTML}
-            </table>
-
-            <div class="footer">
-              Documento generado electrónicamente. No requiere firma física.<br/>
-              Generado el: ${fechaActual}
-            </div>
-          </div>
+        <div class="encabezado">
+          <img src="${logoPath}" alt="Logo Gobierno Omiwave" />
+          <h1>Gobierno Omiwave</h1>
         </div>
 
+        <div style="text-align: center;">
+          <h2>Sistema de Trámites Digitales</h2>
+          <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
+        </div>
+
+        <hr style="margin: 20px 0;" />
+
+        <h3>Datos del Trámite</h3>
+        <table>
+          <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
+          <tr><th>Fecha de Solicitud</th><td>${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : '-'}</td></tr>
+          <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td></tr>
+          <tr><th>Estado</th><td>${tramite.estado}</td></tr>
+        </table>
+
+        <h3>Solicitante</h3>
+        <table>
+          <tr><th>Nombre</th><td>${tramite.solicitante || '-'}</td></tr>
+        </table>
+
+        <h3>Campos adicionales</h3>
+        <table>
+          ${camposHTML}
+        </table>
+
         ${firmaHTML}
+
+        <div class="footer">
+          Documento generado electrónicamente. No requiere firma física.<br/>
+          Generado el: ${fechaActual}
+        </div>
       </div>
     `;
 
@@ -712,7 +738,6 @@ else if (tramite.tipo === "Tramiteprueba") {
       .save();
   });
 }
-
 
 
   // ... aquí puedes seguir con más tipos de trámite usando la misma estructura
