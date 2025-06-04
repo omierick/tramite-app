@@ -740,5 +740,6 @@ else if (tramite.tipo === "Tramiteprueba") {
 }
 
 
+
   // ... aquí puedes seguir con más tipos de trámite usando la misma estructura
 };
