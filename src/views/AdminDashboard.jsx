@@ -12,6 +12,7 @@ import TiposTramiteGrid from "./AdminDashboard/TiposTramiteGrid";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./AdminDashboard.css";
+import UserManagement from "../components/UserManagement";
 
 const AdminDashboard = () => {
   const {
@@ -193,13 +194,16 @@ const AdminDashboard = () => {
           handlePageChange={handlePageChange}
           itemsPerPage={itemsPerPage}
         />
-
         <h2>Tipos de Trámite Existentes</h2>
         <TiposTramiteGrid
           tiposTramite={tiposTramite}
           updateTipoTramite={updateTipoTramite}
           deleteTipoTramite={deleteTipoTramite}
         />
+
+        <hr className="divider" />
+        <h2>Gestión de Usuarios</h2>
+        <UserManagement />
       </div>
     </>
   );

@@ -1,52 +1,44 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useState } from "react";
+import { supabase } from "../services/supabaseClient";
 
-const AuthContext = createContext();
+const UserManagement = () => {
+  const { user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [userToDelete, setUserToDelete] = useState("");
 
-export const useAuth = () => useContext(AuthContext);
+  if (user?.role !== "admin") {
+    return <p>No tienes permisos para ver esta página.</p>;
+  }
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
-  const login = (username, password) => {
-    if (username === "admin" && password === "admin123") {
-      const newUser = { name: "Administrador", role: "admin" };
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      navigate("/");
-    } else if (username === "revisor" && password === "revisor123") {
-      const newUser = { name: "Revisor", role: "revisor" };
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      navigate("/");
-    } else if (username === "usuario" && password === "usuario123") {
-      const newUser = { name: "Usuario", role: "usuario" };
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      navigate("/");
-    } else {
-      return false;
-    }
-    return true;
+  const handleCreate = async () => {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
+      password,
+    });
+    if (error) return alert("Error: " + error.message);
+    alert("Usuario creado: " + data.user.email);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("user");
-    navigate("/login"); // Redirige automáticamente
+  const handleDelete = async () => {
+    const { error } = await supabase.auth.admin.deleteUser(userToDelete);
+    if (error) return alert("Error al eliminar: " + error.message);
+    alert("Usuario eliminado");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+    <div>
+      <h2>Crear Usuario</h2>
+      <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <input placeholder="Password" value={password} type="password" onChange={(e) => setPassword(e.target.value)} />
+      <button onClick={handleCreate}>Crear</button>
+
+      <h2>Eliminar Usuario</h2>
+      <input placeholder="User ID a eliminar" value={userToDelete} onChange={(e) => setUserToDelete(e.target.value)} />
+      <button onClick={handleDelete}>Eliminar</button>
+    </div>
   );
 };
+
+export default UserManagement;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../services/api';
 import { sendTramiteEmail } from '../services/mailService';
+import { generarPDF } from '../utils/pdfUtils'; // Asegúrate de tener esto
 
 function TramiteForm() {
   const [form, setForm] = useState({
@@ -23,10 +24,22 @@ function TramiteForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    api.addTramite(form);
-    await sendTramiteEmail(form);
-    setMessage('¡Trámite enviado y notificación enviada!');
-    setForm({ nombre: '', apellido: '', dni: '', tramiteType: '', detalles: '' });
+    try {
+      // 1. Guardar trámite y obtener el folio/id generado desde Supabase
+      const tramite = await api.addTramite(form);
+      const folio = tramite.folio || tramite.id;
+
+      // 2. Generar PDF con el folio incluido (¡muy importante!)
+      await generatePDF({ ...form, folio });
+
+      // 3. Mandar email si lo usas (incluye folio si lo necesitas)
+      await sendTramiteEmail({ ...form, folio });
+
+      setMessage(`¡Trámite enviado, folio generado: ${folio}! PDF y notificación enviada.`);
+      setForm({ nombre: '', apellido: '', dni: '', tramiteType: '', detalles: '' });
+    } catch (err) {
+      setMessage('Hubo un error al guardar el trámite: ' + err.message);
+    }
   };
 
   return (
@@ -34,7 +47,7 @@ function TramiteForm() {
       <input className="input" type="text" name="nombre" placeholder="Nombre" value={form.nombre} onChange={handleChange} required />
       <input className="input" type="text" name="apellido" placeholder="Apellido" value={form.apellido} onChange={handleChange} required />
       <input className="input" type="text" name="dni" placeholder="DNI" value={form.dni} onChange={handleChange} required />
-      
+
       <select className="input" name="tramiteType" value={form.tramiteType} onChange={handleChange} required>
         <option value="">Selecciona un tipo de trámite</option>
         {templates.map((tpl, idx) => (
@@ -51,4 +64,3 @@ function TramiteForm() {
 }
 
 export default TramiteForm;
-
