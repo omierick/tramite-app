@@ -1,19 +1,25 @@
 import { useState } from "react";
-import { useTramites } from "../context/TramitesContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../services/supabaseClient";
 import "./Login.css";
 
 const Login = () => {
-  const { setNombreUsuario, setRolUsuario, buscarUsuarioPorCorreo } = useTramites();
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth(); // <-- Usa el login del contexto correcto
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { data, error } = await buscarUsuarioPorCorreo(correo);
+    // Busca el usuario por correo en supabase (ajusta según tu backend)
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("correo", correo)
+      .single();
 
     if (error || !data) {
       toast.error("Correo no registrado.");
@@ -25,24 +31,28 @@ const Login = () => {
       return;
     }
 
-    setNombreUsuario(data.nombre);
-    setRolUsuario(data.rol);
+    // Aquí síguelo
+    login({
+      id: data.id,
+      nombre: data.nombre,
+      rol: data.rol,
+      correo: data.correo,
+    });
 
-    // Redirigir según el rol
-    if (data.rol === "admin") {
-      navigate("/admin");
-    } else if (data.rol === "revisor") {
-      navigate("/revisor");
-    } else {
-      navigate("/usuario");
-    }
+    // Redirige según rol
+    if (data.rol.startsWith("admin")) {
+  navigate("/admin");
+} else if (data.rol === "revisor") {
+  navigate("/revisor");
+} else {
+  navigate("/usuario");
+}
   };
 
   return (
     <div className="login-container">
       <form onSubmit={handleSubmit} className="login-form">
         <h2>Iniciar Sesión</h2>
-
         <div className="form-group">
           <label>Correo Electrónico:</label>
           <input
@@ -52,7 +62,6 @@ const Login = () => {
             required
           />
         </div>
-
         <div className="form-group">
           <label>Contraseña:</label>
           <input
@@ -62,7 +71,6 @@ const Login = () => {
             required
           />
         </div>
-
         <button type="submit" className="btn-login">Iniciar Sesión</button>
       </form>
     </div>

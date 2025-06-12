@@ -1,4 +1,3 @@
-// src/views/AdminDashboard.jsx
 import { useState, useRef, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useTramites } from "../context/TramitesContext";
@@ -13,15 +12,16 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./AdminDashboard.css";
 import UserManagement from "../components/UserManagement";
+import { useAuth } from "../context/AuthContext";
 
 const AdminDashboard = () => {
-  const {
-    tramites,
-    tiposTramite,
-    addTipoTramite,
-    updateTipoTramite,
-    deleteTipoTramite,
-  } = useTramites();
+  const { user } = useAuth();
+  const tramitesCtx = useTramites();
+  const tramites = tramitesCtx?.tramites || [];
+  const tiposTramite = tramitesCtx?.tiposTramite || [];
+  const addTipoTramite = tramitesCtx?.addTipoTramite || (() => {});
+  const updateTipoTramite = tramitesCtx?.updateTipoTramite || (() => {});
+  const deleteTipoTramite = tramitesCtx?.deleteTipoTramite || (() => {});
 
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
@@ -32,6 +32,14 @@ const AdminDashboard = () => {
   const [orden, setOrden] = useState("recientes");
   const itemsPerPage = 10;
   const dashboardRef = useRef();
+
+  if (!user) return <div>Cargando usuario...</div>;
+
+  // Permisos
+  const puedeGestionarUsuarios = user.rol === "admin" || user.rol === "admin_usuarios";
+  const puedeVerCharts = ["admin", "admin_charts"].includes(user.rol);
+  const puedeVerTramites = ["admin", "admin_tramites"].includes(user.rol);
+  const puedeCrearTramite = user.rol === "admin";
 
   const totalTramites = tramites.length;
   const pendientes = tramites.filter(t => t.estado === "Pendiente").length;
@@ -141,59 +149,71 @@ const AdminDashboard = () => {
             tramitesHoy={tramitesHoy}
           />
 
-          <DashboardCharts
-            pendientes={pendientes}
-            aprobados={aprobados}
-            rechazados={rechazados}
-            tramites={tramites}
-          />
+          {puedeVerCharts ? (
+            <DashboardCharts
+              pendientes={pendientes}
+              aprobados={aprobados}
+              rechazados={rechazados}
+              tramites={tramites}
+            />
+          ) : (
+            <p style={{ color: "#bbb" }}>No tienes permisos para ver gráficas.</p>
+          )}
         </div>
 
         <hr className="divider" />
 
-        <h2>Crear Nuevo Tipo de Trámite</h2>
-        <CrearTramiteForm
-          nombreTramite={nombreTramite}
-          setNombreTramite={setNombreTramite}
-          campoNuevo={campoNuevo}
-          setCampoNuevo={setCampoNuevo}
-          campos={campos}
-          handleAddCampo={handleAddCampo}
-          handleCrearTramite={handleCrearTramite}
-        />
+        {puedeCrearTramite && (
+          <>
+            <h2>Crear Nuevo Tipo de Trámite</h2>
+            <CrearTramiteForm
+              nombreTramite={nombreTramite}
+              setNombreTramite={setNombreTramite}
+              campoNuevo={campoNuevo}
+              setCampoNuevo={setCampoNuevo}
+              campos={campos}
+              handleAddCampo={handleAddCampo}
+              handleCrearTramite={handleCrearTramite}
+            />
+            <hr className="divider" />
+          </>
+        )}
 
-        <hr className="divider" />
+        {puedeVerTramites ? (
+          <>
+            <h2>Lista de Trámites Recibidos</h2>
+            <div className="filtros-container">
+              <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                <option value="todos">Todos</option>
+                <option value="Pendiente">Pendientes</option>
+                <option value="Aprobado">Aprobados</option>
+                <option value="Rechazado">Rechazados</option>
+              </select>
 
-        <h2>Lista de Trámites Recibidos</h2>
+              <input
+                type="text"
+                placeholder="Buscar por solicitante o tipo..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
 
-        <div className="filtros-container">
-          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-            <option value="todos">Todos</option>
-            <option value="Pendiente">Pendientes</option>
-            <option value="Aprobado">Aprobados</option>
-            <option value="Rechazado">Rechazados</option>
-          </select>
+              <select value={orden} onChange={(e) => setOrden(e.target.value)}>
+                <option value="recientes">Más recientes</option>
+                <option value="antiguos">Más antiguos</option>
+                <option value="tipo">Ordenar por tipo</option>
+              </select>
+            </div>
+            <TramitesTable
+              tramites={tramitesFiltrados}
+              displayTramites={displayTramites}
+              handlePageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+            />
+          </>
+        ) : (
+          <p style={{ color: "#bbb" }}>No tienes permisos para ver la tabla de trámites.</p>
+        )}
 
-          <input
-            type="text"
-            placeholder="Buscar por solicitante o tipo..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-
-          <select value={orden} onChange={(e) => setOrden(e.target.value)}>
-            <option value="recientes">Más recientes</option>
-            <option value="antiguos">Más antiguos</option>
-            <option value="tipo">Ordenar por tipo</option>
-          </select>
-        </div>
-
-        <TramitesTable
-          tramites={tramitesFiltrados}
-          displayTramites={displayTramites}
-          handlePageChange={handlePageChange}
-          itemsPerPage={itemsPerPage}
-        />
         <h2>Tipos de Trámite Existentes</h2>
         <TiposTramiteGrid
           tiposTramite={tiposTramite}
@@ -202,8 +222,13 @@ const AdminDashboard = () => {
         />
 
         <hr className="divider" />
+
         <h2>Gestión de Usuarios</h2>
-        <UserManagement />
+        {puedeGestionarUsuarios ? (
+          <UserManagement />
+        ) : (
+          <p style={{ color: "#bbb" }}>No tienes permisos para gestionar usuarios.</p>
+        )}
       </div>
     </>
   );

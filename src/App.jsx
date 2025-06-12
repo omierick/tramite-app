@@ -1,26 +1,15 @@
-import { useState, lazy, Suspense } from "react";
 import { TramitesProvider } from "./context/TramitesContext";
-import { DarkModeProvider } from "./context/DarkModeContext"; // << Nuevo
+import { DarkModeProvider } from "./context/DarkModeContext";
+import AppRoutes from "./routes/AppRoutes";
+import { ToastContainer } from 'react-toastify';
 
-import Login from "./views/Login";
-import AdminDashboard from "./views/AdminDashboard";
-import RevisorDashboard from "./views/RevisorDashboard";
-import UserDashboard from "./views/UserDashboard";
-
-const App = () => {
-  const [role, setRole] = useState("");
-
-  return (
+const App = () => (
+  <DarkModeProvider>
     <TramitesProvider>
-      <DarkModeProvider>
-        {role === "" && <Login setRole={setRole} />}
-        <Suspense fallback={<div>Cargando dashboard...</div>}></Suspense>
-        {role === "admin" && <AdminDashboard setRole={setRole} />}
-        {role === "revisor" && <RevisorDashboard setRole={setRole} />}
-        {role === "usuario" && <UserDashboard setRole={setRole} />}
-      </DarkModeProvider>
+      <AppRoutes />
+      <ToastContainer />
     </TramitesProvider>
-  );
-};
+  </DarkModeProvider>
+);
 
 export default App;

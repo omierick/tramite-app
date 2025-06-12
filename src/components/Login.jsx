@@ -1,37 +1,64 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { supabase } from "../services/supabaseClient";
-import { useTramites } from "../context/TramitesContext";
-import "./Login.css";
 
-const Login = ({ setRole }) => {
-  const [usuarios, setUsuarios] = useState([]);
-  const { setNombreUsuario } = useTramites();
+const Login = () => {
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const fetchUsuarios = async () => {
-      const { data, error } = await supabase.from("usuarios").select("*");
-      if (error) console.error("Error cargando usuarios:", error);
-      else setUsuarios(data || []);
-    };
-    fetchUsuarios();
-  }, []);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
 
-  const handleLogin = (usuario) => {
-    setNombreUsuario(usuario.nombre);
-    setRole(usuario.rol); // 👈 Ya sabes si es admin, revisor o usuario
+    // 1. Login con supabase
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (authError || !data.user) {
+      setError("Email o contraseña incorrectos");
+      return;
+    }
+
+    // 2. Buscar usuario y rol en tu tabla usuarios
+    let { data: usuario, error: userError } = await supabase
+      .from("usuarios")
+      .select("rol, nombre, id")
+      .eq("correo", email)
+      .single();
+
+    if (userError || !usuario) {
+      setError("No se encontró usuario con ese email.");
+      return;
+    }
+
+    // 3. Guardar en el contexto
+    login({
+      email,
+      nombre: usuario.nombre,
+      id: usuario.id,
+      rol: usuario.rol,
+    });
   };
 
   return (
-    <div className="login-container">
-      <h2>Selecciona tu usuario para iniciar sesión</h2>
-      <div className="usuarios-grid">
-        {usuarios.map((usuario) => (
-          <button key={usuario.id} onClick={() => handleLogin(usuario)}>
-            {usuario.nombre} ({usuario.rol})
-          </button>
-        ))}
-      </div>
-    </div>
+    <form onSubmit={handleLogin}>
+      <input
+        placeholder="Email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+      />
+      <input
+        placeholder="Password"
+        type="password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+      />
+      <button type="submit">Ingresar</button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+    </form>
   );
 };
 
