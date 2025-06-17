@@ -269,7 +269,7 @@ export const generatePDF = (tramite) => {
 
         <div id="pdf-root">
           <div class="encabezado">
-            <img src="${logoPath}" alt="Logo Gobierno Omiwave" />
+            <img src="${logoPath}" alt="Logo Gobierno Omiwave" crossorigin="anonymous" style="max-height: 60px;" />
             <div>
               <h1>Gobierno Omiwave</h1>
               <h2>Sistema de Trámites Digitales</h2>
