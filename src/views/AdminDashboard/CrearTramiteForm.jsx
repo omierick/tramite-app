@@ -1,4 +1,5 @@
-import PropTypes from "prop-types";
+import { useState } from "react";
+import { supabase } from "../../services/supabaseClient";
 
 const CrearTramiteForm = ({
   nombreTramite,
@@ -9,56 +10,59 @@ const CrearTramiteForm = ({
   handleAddCampo,
   handleCrearTramite
 }) => {
+  const [logoFile, setLogoFile] = useState(null);
+
+  const handleLogoUpload = async () => {
+    if (!logoFile) return null;
+
+    const fileExt = logoFile.name.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const { data, error } = await supabase.storage.from("logos-tramites").upload(fileName, logoFile);
+
+    if (error) {
+      console.error("Error al subir logo:", error.message);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase
+      .storage
+      .from("logos-tramites")
+      .getPublicUrl(fileName);
+
+    return publicUrlData.publicUrl;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const logo = await handleLogoUpload(); // puede ser null
+    handleCrearTramite(logo);
+  };
+
   return (
-    <div className="form-crear">
-      <div className="form-group">
-        <label>Nombre del Trámite:</label>
-        <input
-          type="text"
-          value={nombreTramite}
-          onChange={(e) => setNombreTramite(e.target.value)}
-          required
-        />
+    <form onSubmit={handleSubmit} className="crear-tramite-form">
+      <input
+        type="text"
+        placeholder="Nombre del trámite"
+        value={nombreTramite}
+        onChange={(e) => setNombreTramite(e.target.value)}
+        required
+      />
+      <input
+        type="text"
+        placeholder="Agregar campo"
+        value={campoNuevo}
+        onChange={(e) => setCampoNuevo(e.target.value)}
+      />
+      <button type="button" onClick={handleAddCampo}>Añadir campo</button>
+
+      <div>
+        <label>Logo (opcional):</label>
+        <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} />
       </div>
 
-      <div className="form-group">
-        <label>Nuevo Campo:</label>
-        <input
-          type="text"
-          value={campoNuevo}
-          onChange={(e) => setCampoNuevo(e.target.value)}
-        />
-        <button className="btn-secondary" type="button" onClick={handleAddCampo}>
-          Agregar Campo
-        </button>
-      </div>
-
-      {campos.length > 0 && (
-        <div className="campos-preview">
-          <h4>Campos agregados:</h4>
-          <ul>
-            {campos.map((campo, idx) => (
-              <li key={idx}>{campo}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <button className="btn-primary" type="button" onClick={handleCrearTramite}>
-        Crear Trámite
-      </button>
-    </div>
+      <button type="submit">Crear trámite</button>
+    </form>
   );
-};
-
-CrearTramiteForm.propTypes = {
-  nombreTramite: PropTypes.string.isRequired,
-  setNombreTramite: PropTypes.func.isRequired,
-  campoNuevo: PropTypes.string.isRequired,
-  setCampoNuevo: PropTypes.func.isRequired,
-  campos: PropTypes.array.isRequired,
-  handleAddCampo: PropTypes.func.isRequired,
-  handleCrearTramite: PropTypes.func.isRequired,
 };
 
 export default CrearTramiteForm;

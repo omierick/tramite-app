@@ -74,6 +74,7 @@ const UserDashboard = ({ setRole }) => {
     setFormData({ ...formData, [campo]: e.target.value });
   };
 
+
   const onSubmit = async () => {
     const email = getValues("email");
 
@@ -97,14 +98,15 @@ const UserDashboard = ({ setRole }) => {
       setEditandoTramite(null);
     } else {
       const nuevoTramite = {
-        tipo: selectedTipo.nombre,
-        campos: formData,
-        firma,
-        estado: "Pendiente",
-        solicitante: nombreUsuario,
-        email,
-        createdAt: new Date().toISOString(),
-      };
+  tipo: selectedTipo.nombre,
+  campos: formData,
+  firma,
+  logo_url: selectedTipo?.logo_url || null,
+  estado: "Pendiente",
+  solicitante: nombreUsuario,
+  email,
+  createdAt: new Date().toISOString(),
+};
       await addTramite(nuevoTramite);
       await sendTramiteEmail(nuevoTramite);
       toast.success("¡Trámite enviado correctamente!");

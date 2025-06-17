@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   const updateTipoTramite = tramitesCtx?.updateTipoTramite || (() => {});
   const deleteTipoTramite = tramitesCtx?.deleteTipoTramite || (() => {});
 
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
   const [campos, setCampos] = useState([]);
@@ -35,7 +36,6 @@ const AdminDashboard = () => {
 
   if (!user) return <div>Cargando usuario...</div>;
 
-  // Permisos
   const puedeGestionarUsuarios = user.rol === "admin" || user.rol === "admin_usuarios";
   const puedeVerCharts = ["admin", "admin_charts"].includes(user.rol);
   const puedeVerTramites = ["admin", "admin_tramites"].includes(user.rol);
@@ -104,20 +104,21 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleCrearTramite = () => {
-    if (nombreTramite.trim() && campos.length > 0) {
-      addTipoTramite({
-        id: uuidv4(),
-        nombre: nombreTramite,
-        campos: campos,
-      });
-      setNombreTramite("");
-      setCampos([]);
-      alert("Nuevo tipo de trámite creado exitosamente.");
-    } else {
-      alert("Completa el nombre del trámite y agrega al menos un campo.");
-    }
-  };
+  const handleCrearTramite = (logo = null) => {
+  if (nombreTramite.trim() && campos.length > 0) {
+    addTipoTramite({
+      id: uuidv4(),
+      nombre: nombreTramite,
+      campos: campos,
+      logo_url: logo || null // nuevo campo
+    });
+    setNombreTramite("");
+    setCampos([]);
+    alert("Nuevo tipo de trámite creado exitosamente.");
+  } else {
+    alert("Completa el nombre del trámite y agrega al menos un campo.");
+  }
+};
 
   const handleExportDashboard = () => {
     const input = dashboardRef.current;
@@ -139,49 +140,65 @@ const AdminDashboard = () => {
       <div className="admin-container">
         <DashboardHeader onExportDashboard={handleExportDashboard} />
 
-        <div ref={dashboardRef}>
-          <DashboardCards
-            total={totalTramites}
-            pendientes={pendientes}
-            aprobados={aprobados}
-            rechazados={rechazados}
-            promedioTiempo={promedioTiempo()}
-            tramitesHoy={tramitesHoy}
-          />
+        <div className="tabs-container">
+          {puedeVerCharts && (
+            <button className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              Dashboard
+            </button>
+          )}
+          {puedeCrearTramite && (
+            <button className={`tab-button ${activeTab === "crear" ? "active" : ""}`} onClick={() => setActiveTab("crear")}>
+              Crear Trámite
+            </button>
+          )}
+          {puedeVerTramites && (
+            <button className={`tab-button ${activeTab === "tramites" ? "active" : ""}`} onClick={() => setActiveTab("tramites")}>
+              Trámites
+            </button>
+          )}
+          <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
+            Tipos de Trámite
+          </button>
+          {puedeGestionarUsuarios && (
+            <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>
+              Gestión de Usuarios
+            </button>
+          )}
+        </div>
 
-          {puedeVerCharts ? (
+        {activeTab === "dashboard" && puedeVerCharts && (
+          <div ref={dashboardRef}>
+            <DashboardCards
+              total={totalTramites}
+              pendientes={pendientes}
+              aprobados={aprobados}
+              rechazados={rechazados}
+              promedioTiempo={promedioTiempo()}
+              tramitesHoy={tramitesHoy}
+            />
             <DashboardCharts
               pendientes={pendientes}
               aprobados={aprobados}
               rechazados={rechazados}
               tramites={tramites}
             />
-          ) : (
-            <p style={{ color: "#bbb" }}>No tienes permisos para ver gráficas.</p>
-          )}
-        </div>
-
-        <hr className="divider" />
-
-        {puedeCrearTramite && (
-          <>
-            <h2>Crear Nuevo Tipo de Trámite</h2>
-            <CrearTramiteForm
-              nombreTramite={nombreTramite}
-              setNombreTramite={setNombreTramite}
-              campoNuevo={campoNuevo}
-              setCampoNuevo={setCampoNuevo}
-              campos={campos}
-              handleAddCampo={handleAddCampo}
-              handleCrearTramite={handleCrearTramite}
-            />
-            <hr className="divider" />
-          </>
+          </div>
         )}
 
-        {puedeVerTramites ? (
+        {activeTab === "crear" && puedeCrearTramite && (
+          <CrearTramiteForm
+            nombreTramite={nombreTramite}
+            setNombreTramite={setNombreTramite}
+            campoNuevo={campoNuevo}
+            setCampoNuevo={setCampoNuevo}
+            campos={campos}
+            handleAddCampo={handleAddCampo}
+            handleCrearTramite={handleCrearTramite}
+          />
+        )}
+
+        {activeTab === "tramites" && puedeVerTramites && (
           <>
-            <h2>Lista de Trámites Recibidos</h2>
             <div className="filtros-container">
               <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
                 <option value="todos">Todos</option>
@@ -189,14 +206,12 @@ const AdminDashboard = () => {
                 <option value="Aprobado">Aprobados</option>
                 <option value="Rechazado">Rechazados</option>
               </select>
-
               <input
                 type="text"
                 placeholder="Buscar por solicitante o tipo..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
-
               <select value={orden} onChange={(e) => setOrden(e.target.value)}>
                 <option value="recientes">Más recientes</option>
                 <option value="antiguos">Más antiguos</option>
@@ -210,25 +225,17 @@ const AdminDashboard = () => {
               itemsPerPage={itemsPerPage}
             />
           </>
-        ) : (
-          <p style={{ color: "#bbb" }}>No tienes permisos para ver la tabla de trámites.</p>
         )}
 
-        <h2>Tipos de Trámite Existentes</h2>
-        <TiposTramiteGrid
-          tiposTramite={tiposTramite}
-          updateTipoTramite={updateTipoTramite}
-          deleteTipoTramite={deleteTipoTramite}
-        />
-
-        <hr className="divider" />
-
-        <h2>Gestión de Usuarios</h2>
-        {puedeGestionarUsuarios ? (
-          <UserManagement />
-        ) : (
-          <p style={{ color: "#bbb" }}>No tienes permisos para gestionar usuarios.</p>
+        {activeTab === "tipos" && (
+          <TiposTramiteGrid
+            tiposTramite={tiposTramite}
+            updateTipoTramite={updateTipoTramite}
+            deleteTipoTramite={deleteTipoTramite}
+          />
         )}
+
+        {activeTab === "usuarios" && puedeGestionarUsuarios && <UserManagement />}
       </div>
     </>
   );

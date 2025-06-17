@@ -236,39 +236,49 @@ export const generatePDF = (tramite) => {
     import("html2pdf.js").then((html2pdf) => {
       const element = document.createElement("div");
       const fechaActual = new Date().toLocaleString();
-      const logoPath = "src/assets/logo3.png";
+      const logoPersonalizado = tramite.logo || null;
+      const logoPath = tramite.logo_url || "src/assets/logo3.png";
+
       const camposHTML = Object.entries(tramite.campos || {})
         .map(([campo, valor]) => `
           <tr>
-            <th>${campo}</th>
-            <td>${valor || '-'}</td>
+            <th style="text-align:left; background:#f3f4f6; padding:6px;">${campo}</th>
+            <td style="padding:6px;">${valor || '-'}</td>
           </tr>
         `).join('');
 
       const firmaHTML = tramite.firma && tramite.firma.startsWith("data:image/")
         ? `
-          <div class="firma">
-            <h2>Firma del Solicitante</h2>
+          <div style="margin-top: 30px; text-align:center;">
+            <h3>Firma del Solicitante</h3>
             <img src="${tramite.firma}" alt="Firma" style="max-width: 300px; max-height: 150px;" />
           </div>
         `
         : "";
 
-      // Incluye el folio en la tabla principal:
       const htmlContent = `
         <style>
-          /* Tus estilos aquí... */
+          body { font-family: Arial, sans-serif; font-size: 12px; color: #111827; }
+          h1, h2, h3 { margin: 0 0 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th, td { border: 1px solid #e5e7eb; text-align: left; padding: 6px; }
+          .encabezado { display: flex; align-items: center; gap: 16px; }
+          .encabezado img { max-height: 60px; }
+          .footer { margin-top: 30px; font-size: 10px; text-align: center; color: #6b7280; }
         </style>
+
         <div id="pdf-root">
           <div class="encabezado">
             <img src="${logoPath}" alt="Logo Gobierno Omiwave" />
-            <h1>Gobierno Omiwave</h1>
+            <div>
+              <h1>Gobierno Omiwave</h1>
+              <h2>Sistema de Trámites Digitales</h2>
+              <p style="font-size: 13px; color: #6b7280;">Documento Validado de Trámite</p>
+            </div>
           </div>
-          <div style="text-align: center;">
-            <h2>Sistema de Trámites Digitales</h2>
-            <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
-          </div>
+
           <hr style="margin: 20px 0;" />
+
           <h3>Datos del Trámite</h3>
           <table>
             <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
@@ -277,15 +287,19 @@ export const generatePDF = (tramite) => {
             <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : '-'}</td></tr>
             <tr><th>Estado</th><td>${tramite.estado || "-"}</td></tr>
           </table>
+
           <h3>Solicitante</h3>
           <table>
             <tr><th>Nombre</th><td>${tramite.solicitante || '-'}</td></tr>
           </table>
+
           <h3>Campos adicionales</h3>
           <table>
             ${camposHTML}
           </table>
+
           ${firmaHTML}
+
           <div class="footer">
             Documento generado electrónicamente. No requiere firma física.<br/>
             Generado el: ${fechaActual}
