@@ -280,7 +280,19 @@ salto(14);
       ? tramite.logo_url
       : new URL("../assets/logo3.png", import.meta.url).href;
 
-    const titulo = tramite.tituloEmpresa || "Gobierno Omiwave";
+       const drawCampo = (x, w, label, valor) => {
+  doc.rect(x, y, w, 8);
+  doc.text(`${label}: ${valor}`, x + 2, y + 5);
+};
+
+// Luego la usas
+const titulo = (tramite.campos?.tituloEmpresa && tramite.campos.tituloEmpresa.trim() !== "")
+  ? tramite.campos.tituloEmpresa
+  : "Gobierno Omiwave";
+
+
+drawCampo(15, 180, "tituloEmpresa", titulo);
+salto(9);
 
     const htmlContent = `
       <style>
