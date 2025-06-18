@@ -275,10 +275,10 @@ salto(14);
       `
       : "";
 
-    // === Campos dinámicos de empresa ===
-    const logoSrc = (tramite.logoEmpresa !== null && tramite.logoEmpresa !== undefined && tramite.logoEmpresa.trim() !== "")
-  ? tramite.logoEmpresa
-  : new URL("../assets/logo3.png", import.meta.url).href;
+    // === Validación dinámica de logo ===
+    const logoPath = (tramite.logo_url !== null && tramite.logo_url !== undefined && tramite.logo_url.trim() !== "")
+      ? tramite.logo_url
+      : new URL("../assets/logo3.png", import.meta.url).href;
 
     const titulo = tramite.tituloEmpresa || "Gobierno Omiwave";
 
@@ -361,7 +361,7 @@ salto(14);
 
       <div id="pdf-root">
         <div class="encabezado">
-          <img src="${logoSrc}" alt="Logo" />
+          <img src="${logoPath}" alt="Logo" />
           <h1>${titulo}</h1>
         </div>
 
