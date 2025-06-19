@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../../services/supabaseClient";
+import "../../components/tramites/CrearTramiteForm.css";
+
 
 const CrearTramiteForm = ({
   nombreTramite,
@@ -8,7 +10,7 @@ const CrearTramiteForm = ({
   setCampoNuevo,
   campos,
   handleAddCampo,
-  handleCrearTramite
+  handleCrearTramite,
 }) => {
   const [logoFile, setLogoFile] = useState(null);
 
@@ -17,15 +19,16 @@ const CrearTramiteForm = ({
 
     const fileExt = logoFile.name.split(".").pop();
     const fileName = `${Date.now()}.${fileExt}`;
-    const { data, error } = await supabase.storage.from("logos-tramites").upload(fileName, logoFile);
+    const { error } = await supabase.storage
+      .from("logos-tramites")
+      .upload(fileName, logoFile);
 
     if (error) {
       console.error("Error al subir logo:", error.message);
       return null;
     }
 
-    const { data: publicUrlData } = supabase
-      .storage
+    const { data: publicUrlData } = supabase.storage
       .from("logos-tramites")
       .getPublicUrl(fileName);
 
@@ -34,34 +37,71 @@ const CrearTramiteForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const logo = await handleLogoUpload(); // puede ser null
+    const logo = await handleLogoUpload();
     handleCrearTramite(logo);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="crear-tramite-form">
+    <form onSubmit={handleSubmit} className="form-container">
+  <h2 className="form-title">Crear Nuevo Trámite</h2>
+
+  <div className="form-group">
+    <label>Nombre del trámite</label>
+    <input
+      type="text"
+      value={nombreTramite}
+      onChange={(e) => setNombreTramite(e.target.value)}
+      required
+    />
+  </div>
+
+  <div className="form-group">
+    <label>Agregar campo</label>
+    <div style={{ display: "flex", gap: "10px" }}>
       <input
         type="text"
-        placeholder="Nombre del trámite"
-        value={nombreTramite}
-        onChange={(e) => setNombreTramite(e.target.value)}
-        required
-      />
-      <input
-        type="text"
-        placeholder="Agregar campo"
         value={campoNuevo}
         onChange={(e) => setCampoNuevo(e.target.value)}
       />
-      <button type="button" onClick={handleAddCampo}>Añadir campo</button>
+      <button type="button" onClick={handleAddCampo}>
+        Añadir
+      </button>
+    </div>
+    {campos.length > 0 && (
+      <ul>
+        {campos.map((c, i) => (
+          <li key={i}>{c}</li>
+        ))}
+      </ul>
+    )}
+  </div>
 
-      <div>
-        <label>Logo (opcional):</label>
-        <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} />
-      </div>
+  <div className="form-group">
+    <label>Logo (opcional)</label>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={(e) => {
+        const file = e.target.files[0];
+        setLogoFile(file);
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const img = document.getElementById("logo-preview");
+            if (img) img.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      }}
+    />
+    <img id="logo-preview" alt="Vista previa del logo" className="logo-preview" />
+  </div>
 
-      <button type="submit">Crear trámite</button>
-    </form>
+  <button type="submit" className="button-primary">
+    Crear trámite
+  </button>
+</form>
+
   );
 };
 
