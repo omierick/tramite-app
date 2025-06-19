@@ -405,7 +405,6 @@ export const generatePDF = (tramite) => {
       <div id="pdf-root">
         <div class="encabezado">
           <img src="${logoPath}" alt="Logo" />
-          <h1>${titulo}</h1>
         </div>
 
         <div style="text-align: center;">
