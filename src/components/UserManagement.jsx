@@ -92,6 +92,7 @@ const UserManagement = () => {
         <option value="admin_tramites">admin_tramites</option>
         <option value="admin_usuarios">admin_usuarios</option>
         <option value="admin_charts">admin_charts</option>
+        <option value="usuario">usuario</option>
       </select>
       <button
         onClick={handleCreate}
