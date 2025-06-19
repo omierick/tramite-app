@@ -1,4 +1,3 @@
-// src/views/RevisorDashboard.jsx
 import { useState } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
@@ -9,7 +8,10 @@ import "./RevisorDashboard.css";
 const RevisorDashboard = () => {
   const { tramites, updateTramiteEstado, setNombreUsuario, setRolUsuario } = useTramites();
   const [tramiteSeleccionado, setTramiteSeleccionado] = useState(null);
-  const [comentario, setComentario] = useState(""); // nuevo estado para el comentario
+  const [comentario, setComentario] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [orden, setOrden] = useState("recientes");
 
   const handleAprobar = async (id) => {
     updateTramiteEstado(id, "Aprobado");
@@ -24,7 +26,7 @@ const RevisorDashboard = () => {
   };
 
   const handleRechazar = async (id) => {
-    updateTramiteEstado(id, "Rechazado", comentario); // enviar comentario si tu función lo soporta
+    updateTramiteEstado(id, "Rechazado", comentario);
 
     const tramite = tramites.find(t => t.id === id);
     if (tramite) {
@@ -45,9 +47,29 @@ const RevisorDashboard = () => {
   };
 
   const handleVerDetalles = (tramite) => {
-    setComentario(""); // limpiar comentario previo
+    setComentario("");
     setTramiteSeleccionado(tramite);
   };
+
+  const tramitesFiltrados = tramites
+    .filter((t) => {
+      if (filtroEstado !== "todos" && t.estado !== filtroEstado) return false;
+      return (
+        (t.folio ?? "").toString().toLowerCase().includes(busqueda.toLowerCase()) ||
+        (t.tipo ?? "").toString().toLowerCase().includes(busqueda.toLowerCase()) ||
+        (t.solicitante ?? "").toString().toLowerCase().includes(busqueda.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      if (orden === "recientes") {
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      } else if (orden === "antiguos") {
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      } else if (orden === "tipo") {
+        return (a.tipo ?? "").localeCompare(b.tipo ?? "");
+      }
+      return 0;
+    });
 
   return (
     <>
@@ -55,7 +77,38 @@ const RevisorDashboard = () => {
       <div className="revisor-container">
         <h2>Revisión de Trámites</h2>
 
-        {tramites.length === 0 ? (
+        <div className="filtros-container">
+          <select
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            className="filtro-select"
+          >
+            <option value="todos">Todos</option>
+            <option value="Pendiente">Pendientes</option>
+            <option value="Aprobado">Aprobados</option>
+            <option value="Rechazado">Rechazados</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Buscar por solicitante o tipo..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="input-busqueda"
+          />
+
+          <select
+            value={orden}
+            onChange={(e) => setOrden(e.target.value)}
+            className="filtro-select"
+          >
+            <option value="recientes">Más recientes</option>
+            <option value="antiguos">Más antiguos</option>
+            <option value="tipo">Ordenar por tipo</option>
+          </select>
+        </div>
+
+        {tramitesFiltrados.length === 0 ? (
           <div className="no-tramites">No hay trámites pendientes 🚀</div>
         ) : (
           <table className="tabla-revisor">
@@ -71,13 +124,11 @@ const RevisorDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {tramites.map((tramite) => (
-                
+              {tramitesFiltrados.map((tramite) => (
                 <tr key={tramite.id}>
                   <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-  {tramite.folio || "Sin folio"}
-</td>
-
+                    {tramite.folio || "Sin folio"}
+                  </td>
                   <td>{tramite.tipo}</td>
                   <td>{tramite.solicitante || "No especificado"}</td>
                   <td className={`estado ${tramite.estado.toLowerCase()}`}>{tramite.estado}</td>
@@ -98,7 +149,6 @@ const RevisorDashboard = () => {
           </table>
         )}
 
-        {/* Modal Detalle */}
         {tramiteSeleccionado && (
           <div className="modal-overlay" onClick={(e) => {
             if (e.target.classList.contains('modal-overlay')) {
@@ -162,7 +212,6 @@ const RevisorDashboard = () => {
                 </>
               )}
 
-              {/* Campo para comentario */}
               <div className="comentario-revisor">
                 <label htmlFor="comentario">Comentario del Revisor (opcional):</label>
                 <textarea
@@ -176,18 +225,20 @@ const RevisorDashboard = () => {
 
               <div className="botones-modal">
                 <button
-  className="btn-pdf"
-  onClick={() => {
-    const index = tramites.findIndex(t => t.id === tramiteSeleccionado.id);
-    generatePDF(tramiteSeleccionado, index + 1); // index + 1 = Trámite #1, #2, etc.
-  }}
->
-  Descargar PDF
-</button>
+                  className="btn-pdf"
+                  onClick={() => {
+                    const index = tramites.findIndex(t => t.id === tramiteSeleccionado.id);
+                    generatePDF(tramiteSeleccionado, index + 1);
+                  }}
+                >
+                  Descargar PDF
+                </button>
                 <button className="btn-cerrar" onClick={() => {
                   setComentario("");
                   setTramiteSeleccionado(null);
-                }}>Cerrar</button>
+                }}>
+                  Cerrar
+                </button>
               </div>
             </div>
           </div>

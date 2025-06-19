@@ -65,30 +65,32 @@ const AdminDashboard = () => {
   }).length;
 
   const tramitesFiltrados = useMemo(() => {
-    let filtrados = [...tramites];
+  let filtrados = [...tramites];
 
-    if (filtroEstado !== "todos") {
-      filtrados = filtrados.filter(t => t.estado === filtroEstado);
-    }
+  if (filtroEstado !== "todos") {
+    filtrados = filtrados.filter(t => t.estado === filtroEstado);
+  }
 
-    if (busqueda.trim() !== "") {
-      filtrados = filtrados.filter(
-        t =>
-          t.tipo?.toLowerCase().includes(busqueda.toLowerCase()) ||
-          t.solicitante?.toLowerCase().includes(busqueda.toLowerCase())
-      );
-    }
+  if (busqueda.trim() !== "") {
+    const termino = busqueda.toLowerCase();
+    filtrados = filtrados.filter((t) =>
+      (t.tipo ?? "").toString().toLowerCase().includes(termino) ||
+      (t.solicitante ?? "").toString().toLowerCase().includes(termino) ||
+      (t.folio ?? "").toString().toLowerCase().includes(termino) // agregado con control
+    );
+  }
 
-    if (orden === "recientes") {
-      filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (orden === "antiguos") {
-      filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    } else if (orden === "tipo") {
-      filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
-    }
+  if (orden === "recientes") {
+    filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (orden === "antiguos") {
+    filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  } else if (orden === "tipo") {
+    filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
+  }
 
-    return filtrados;
-  }, [tramites, filtroEstado, busqueda, orden]);
+  return filtrados;
+}, [tramites, filtroEstado, busqueda, orden]);
+
 
   const pagesVisited = pageNumber * itemsPerPage;
   const displayTramites = tramitesFiltrados.slice(pagesVisited, pagesVisited + itemsPerPage);
