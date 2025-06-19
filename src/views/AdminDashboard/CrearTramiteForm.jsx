@@ -42,9 +42,10 @@ const CrearTramiteForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container">
+   <form onSubmit={handleSubmit} className="form-container">
   <h2 className="form-title">Crear Nuevo Trámite</h2>
 
+  {/* Nombre del trámite */}
   <div className="form-group">
     <label>Nombre del trámite</label>
     <input
@@ -55,6 +56,7 @@ const CrearTramiteForm = ({
     />
   </div>
 
+  {/* Campos dinámicos */}
   <div className="form-group">
     <label>Agregar campo</label>
     <div style={{ display: "flex", gap: "10px" }}>
@@ -63,12 +65,16 @@ const CrearTramiteForm = ({
         value={campoNuevo}
         onChange={(e) => setCampoNuevo(e.target.value)}
       />
-      <button type="button" onClick={handleAddCampo}>
+      <button
+        type="button"
+        onClick={handleAddCampo}
+        className="btn btn-primary"
+      >
         Añadir
       </button>
     </div>
     {campos.length > 0 && (
-      <ul>
+      <ul style={{ marginTop: "10px", paddingLeft: "20px" }}>
         {campos.map((c, i) => (
           <li key={i}>{c}</li>
         ))}
@@ -76,6 +82,7 @@ const CrearTramiteForm = ({
     )}
   </div>
 
+  {/* Logo */}
   <div className="form-group">
     <label>Logo (opcional)</label>
     <input
@@ -97,10 +104,12 @@ const CrearTramiteForm = ({
     <img id="logo-preview" alt="Vista previa del logo" className="logo-preview" />
   </div>
 
-  <button type="submit" className="button-primary">
+  {/* Botón principal */}
+  <button type="submit" className="btn btn-primary">
     Crear trámite
   </button>
 </form>
+
 
   );
 };
