@@ -20,6 +20,7 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
         <thead>
           <tr>
             <th>ID</th>
+            <th>Folio</th>
             <th>Tipo de Trámite</th>
             <th>Solicitante</th>
             <th>Estado</th>
@@ -34,6 +35,10 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
                 <td style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "#888" }}>
                   {tramite.id}
                 </td>
+                <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+  {tramite.folio || "Sin folio"}
+</td>
+
                 <td>{tramite.tipo}</td>
                 <td>{tramite.solicitante || "No especificado"}</td>
                 <td className={`estado ${tramite.estado?.toLowerCase() || ""}`}>

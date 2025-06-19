@@ -61,6 +61,7 @@ const RevisorDashboard = () => {
           <table className="tabla-revisor">
             <thead>
               <tr>
+                <th>Folio</th>
                 <th>Tipo de Trámite</th>
                 <th>Solicitante</th>
                 <th>Estado</th>
@@ -71,7 +72,12 @@ const RevisorDashboard = () => {
             </thead>
             <tbody>
               {tramites.map((tramite) => (
+                
                 <tr key={tramite.id}>
+                  <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+  {tramite.folio || "Sin folio"}
+</td>
+
                   <td>{tramite.tipo}</td>
                   <td>{tramite.solicitante || "No especificado"}</td>
                   <td className={`estado ${tramite.estado.toLowerCase()}`}>{tramite.estado}</td>

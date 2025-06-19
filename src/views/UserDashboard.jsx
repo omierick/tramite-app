@@ -253,6 +253,7 @@ const UserDashboard = ({ setRole }) => {
             <table className="tabla-tramites">
               <thead>
                 <tr>
+                  <th>Folio</th>
                   <th>Tipo</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -261,6 +262,10 @@ const UserDashboard = ({ setRole }) => {
               <tbody>
                 {tramitesUsuario.map((tramite) => (
                   <tr key={tramite.id}>
+                    <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+  {tramite.folio || "Sin folio"}
+</td>
+
                     <td>{tramite.tipo}</td>
                     <td className={`estado ${tramite.estado.toLowerCase()}`}>
                       <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
