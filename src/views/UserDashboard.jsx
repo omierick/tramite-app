@@ -74,14 +74,8 @@ const UserDashboard = ({ setRole }) => {
     setFormData({ ...formData, [campo]: e.target.value });
   };
 
-
   const onSubmit = async () => {
     const email = getValues("email");
-
-    if (!nombreUsuario) {
-      toast.error("Debes ingresar tu nombre antes de enviar un trámite.");
-      return;
-    }
 
     if (!firma) {
       toast.error("Por favor guarda tu firma antes de enviar.");
@@ -98,15 +92,15 @@ const UserDashboard = ({ setRole }) => {
       setEditandoTramite(null);
     } else {
       const nuevoTramite = {
-  tipo: selectedTipo.nombre,
-  campos: formData,
-  firma,
-  logo_url: selectedTipo?.logo_url || null,
-  estado: "Pendiente",
-  solicitante: nombreUsuario,
-  email,
-  createdAt: new Date().toISOString(),
-};
+        tipo: selectedTipo.nombre,
+        campos: formData,
+        firma,
+        logo_url: selectedTipo?.logo_url || null,
+        estado: "Pendiente",
+        solicitante: nombreUsuario,
+        email,
+        createdAt: new Date().toISOString(),
+      };
       await addTramite(nuevoTramite);
       await sendTramiteEmail(nuevoTramite);
       toast.success("¡Trámite enviado correctamente!");
@@ -148,28 +142,9 @@ const UserDashboard = ({ setRole }) => {
       <Navbar />
       <div className="user-container">
         <h2>Mis Trámites</h2>
-        <button
-          onClick={() => {
-            setNombreUsuario("");
-            setMostrarFormulario(true);
-          }}
-          className="btn-secondary"
-          style={{ marginBottom: "1rem" }}
-        >
-          Cambiar nombre y correo
-        </button>
-
         {(!nombreUsuario || mostrarFormulario) ? (
           <div className="nombre-usuario-form">
-            <h3>Antes de comenzar, ingresa tu nombre:</h3>
-            <input
-              type="text"
-              placeholder="Tu nombre"
-              value={nombreUsuario}
-              onChange={(e) => setNombreUsuario(e.target.value)}
-              required
-            />
-
+            <h3>Antes de comenzar, ingresa tu correo electrónico:</h3>
             <input
               type="email"
               placeholder="Tu correo electrónico"
@@ -182,7 +157,11 @@ const UserDashboard = ({ setRole }) => {
               className="btn-primary"
               style={{ marginTop: "1rem" }}
               onClick={() => {
-                if (nombreUsuario && !errors.email) setMostrarFormulario(false);
+                const email = getValues("email");
+                if (email && !errors.email) {
+                  setNombreUsuario(email.split("@")[0]); // por convención
+                  setMostrarFormulario(false);
+                }
               }}
             >
               Continuar
@@ -263,9 +242,8 @@ const UserDashboard = ({ setRole }) => {
                 {tramitesUsuario.map((tramite) => (
                   <tr key={tramite.id}>
                     <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-  {tramite.folio || "Sin folio"}
-</td>
-
+                      {tramite.folio || "Sin folio"}
+                    </td>
                     <td>{tramite.tipo}</td>
                     <td className={`estado ${tramite.estado.toLowerCase()}`}>
                       <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
@@ -276,7 +254,7 @@ const UserDashboard = ({ setRole }) => {
                           {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
                             day: "numeric",
                             month: "long",
-                            year: "numeric"
+                            year: "numeric",
                           })}
                         </div>
                       )}
