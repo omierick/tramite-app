@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useTramites } from "../context/TramitesContext";
+import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import FirmaCanvas from "../components/FirmaCanvas";
 import { toast } from "react-toastify";
@@ -16,11 +17,10 @@ const schema = yup.object().shape({
 });
 
 const UserDashboard = ({ setRole }) => {
+  const { user } = useAuth();
   const {
     tramites,
     tiposTramite,
-    nombreUsuario,
-    setNombreUsuario,
     addTramite,
     updateTramiteCampos,
   } = useTramites();
@@ -30,7 +30,6 @@ const UserDashboard = ({ setRole }) => {
   const [formData, setFormData] = useState({});
   const [firma, setFirma] = useState(null);
   const [editandoTramite, setEditandoTramite] = useState(null);
-  const [mostrarFormulario, setMostrarFormulario] = useState(true);
 
   const {
     register,
@@ -41,15 +40,6 @@ const UserDashboard = ({ setRole }) => {
   } = useForm({
     resolver: yupResolver(schema),
   });
-
-  useEffect(() => {
-    if (!nombreUsuario && tramites.length > 0) {
-      const tramiteConNombre = tramites.find((t) => t.solicitante);
-      if (tramiteConNombre) {
-        setNombreUsuario(tramiteConNombre.solicitante);
-      }
-    }
-  }, [nombreUsuario, tramites]);
 
   const handleSelectChange = (e) => {
     setTramiteSeleccionadoId(e.target.value);
@@ -97,7 +87,7 @@ const UserDashboard = ({ setRole }) => {
         firma,
         logo_url: selectedTipo?.logo_url || null,
         estado: "Pendiente",
-        solicitante: nombreUsuario,
+        solicitante: user.correo,
         email,
         createdAt: new Date().toISOString(),
       };
@@ -134,40 +124,16 @@ const UserDashboard = ({ setRole }) => {
   };
 
   const tramitesUsuario = useMemo(() => {
-    return tramites.filter((t) => t.solicitante === nombreUsuario);
-  }, [tramites, nombreUsuario]);
+    return tramites.filter((t) => t.solicitante === user.correo);
+  }, [tramites, user]);
 
   return (
     <>
       <Navbar />
       <div className="user-container">
         <h2>Mis Trámites</h2>
-        {(!nombreUsuario || mostrarFormulario) ? (
-          <div className="nombre-usuario-form">
-            <h3>Antes de comenzar, ingresa tu correo electrónico:</h3>
-            <input
-              type="email"
-              placeholder="Tu correo electrónico"
-              {...register("email")}
-              required
-            />
-            {errors.email && <p className="error">{errors.email.message}</p>}
 
-            <button
-              className="btn-primary"
-              style={{ marginTop: "1rem" }}
-              onClick={() => {
-                const email = getValues("email");
-                if (email && !errors.email) {
-                  setNombreUsuario(email.split("@")[0]); // por convención
-                  setMostrarFormulario(false);
-                }
-              }}
-            >
-              Continuar
-            </button>
-          </div>
-        ) : editandoTramite || selectedTipo ? (
+        {editandoTramite || selectedTipo ? (
           <form className="tramite-form" onSubmit={handleSubmit(onSubmit)}>
             <h3>
               {editandoTramite
@@ -188,6 +154,17 @@ const UserDashboard = ({ setRole }) => {
             ))}
 
             <div className="form-group">
+              <label>Correo electrónico para actualizaciones:</label>
+              <input
+                type="email"
+                placeholder="Tu correo electrónico"
+                {...register("email")}
+                required
+              />
+              {errors.email && <p className="error">{errors.email.message}</p>}
+            </div>
+
+            <div className="form-group">
               <label>Firma del solicitante:</label>
               <FirmaCanvas
                 setFirma={(firmaData) => {
@@ -195,9 +172,8 @@ const UserDashboard = ({ setRole }) => {
                   setValue("firma", firmaData);
                 }}
               />
+              {errors.firma && <p className="error">{errors.firma.message}</p>}
             </div>
-
-            {errors.firma && <p className="error">{errors.firma.message}</p>}
 
             <button className="btn-primary" type="submit">
               {editandoTramite ? "Enviar Corrección" : "Enviar Trámite"}
