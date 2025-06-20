@@ -127,6 +127,36 @@ const UserDashboard = ({ setRole }) => {
     return tramites.filter((t) => t.solicitante === user.correo);
   }, [tramites, user]);
 
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
+  const [orden, setOrden] = useState("recientes");
+
+  const tramitesFiltrados = useMemo(() => {
+    let filtrados = [...tramitesUsuario];
+
+    if (filtroEstado !== "todos") {
+      filtrados = filtrados.filter(t => t.estado === filtroEstado);
+    }
+
+    if (busqueda.trim() !== "") {
+      const termino = busqueda.toLowerCase();
+      filtrados = filtrados.filter(t =>
+        (t.tipo ?? "").toLowerCase().includes(termino) ||
+        (String(t.folio ?? "")).toLowerCase().includes(termino)
+      );
+    }
+
+    if (orden === "recientes") {
+      filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (orden === "antiguos") {
+      filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (orden === "tipo") {
+      filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
+    }
+
+    return filtrados;
+  }, [tramitesUsuario, filtroEstado, busqueda, orden]);
+
   return (
     <>
       <Navbar />
@@ -205,6 +235,29 @@ const UserDashboard = ({ setRole }) => {
         {tramitesUsuario.length > 0 && (
           <div className="mis-tramites">
             <h3>Mis Trámites Enviados</h3>
+
+            <div className="filtros-container">
+              <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                <option value="todos">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="Buscar por tipo o folio..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+
+              <select value={orden} onChange={(e) => setOrden(e.target.value)}>
+                <option value="recientes">Más recientes</option>
+                <option value="antiguos">Más antiguos</option>
+                <option value="tipo">Ordenar por tipo</option>
+              </select>
+            </div>
+
             <table className="tabla-tramites">
               <thead>
                 <tr>
@@ -215,54 +268,62 @@ const UserDashboard = ({ setRole }) => {
                 </tr>
               </thead>
               <tbody>
-                {tramitesUsuario.map((tramite) => (
-                  <tr key={tramite.id}>
-                    <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-                      {tramite.folio || "Sin folio"}
-                    </td>
-                    <td>{tramite.tipo}</td>
-                    <td className={`estado ${tramite.estado.toLowerCase()}`}>
-                      <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
-
-                      {tramite.estado === "Aprobado" && tramite.reviewedAt && (
-                        <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
-                          <i className="fas fa-calendar-check" style={{ marginRight: "4px" }}></i>
-                          {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </div>
-                      )}
-
-                      {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
-                        <div style={{ fontSize: "0.8rem", color: "#c00", marginTop: "4px" }}>
-                          <i className="fas fa-info-circle" style={{ marginRight: "4px" }}></i>
-                          <strong>Motivo:</strong> {tramite.comentario_revisor}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {tramite.estado === "Rechazado" && (
-                        <button
-                          className="btn-secondary"
-                          onClick={() => handleEditarTramite(tramite)}
-                        >
-                          Editar
-                        </button>
-                      )}
-                      {tramite.estado === "Aprobado" && (
-                        <button
-                          className="btn-secondary"
-                          onClick={() => handleDescargarTramite(tramite)}
-                          style={{ marginLeft: "0.5rem" }}
-                        >
-                          Descargar
-                        </button>
-                      )}
+                {tramitesFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: "center", padding: "1rem", color: "#777" }}>
+                      No se encontraron coincidencias.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  tramitesFiltrados.map((tramite) => (
+                    <tr key={tramite.id}>
+                      <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                        {tramite.folio || "Sin folio"}
+                      </td>
+                      <td>{tramite.tipo}</td>
+                      <td className={`estado ${tramite.estado.toLowerCase()}`}>
+                        <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
+
+                        {tramite.estado === "Aprobado" && tramite.reviewedAt && (
+                          <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
+                            <i className="fas fa-calendar-check" style={{ marginRight: "4px" }}></i>
+                            {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </div>
+                        )}
+
+                        {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
+                          <div style={{ fontSize: "0.8rem", color: "#c00", marginTop: "4px" }}>
+                            <i className="fas fa-info-circle" style={{ marginRight: "4px" }}></i>
+                            <strong>Motivo:</strong> {tramite.comentario_revisor}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {tramite.estado === "Rechazado" && (
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleEditarTramite(tramite)}
+                          >
+                            Editar
+                          </button>
+                        )}
+                        {tramite.estado === "Aprobado" && (
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleDescargarTramite(tramite)}
+                            style={{ marginLeft: "0.5rem" }}
+                          >
+                            Descargar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
