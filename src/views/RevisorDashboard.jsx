@@ -162,36 +162,41 @@ const RevisorDashboard = () => {
               <hr />
 
               <h3>Datos del Trámite</h3>
-              <table className="tabla-detalle">
-                <tbody>
-                  <tr>
-                    <th>Tipo de Trámite</th>
-                    <td>{tramiteSeleccionado.tipo}</td>
-                  </tr>
-                  <tr>
-                    <th>Fecha de Solicitud</th>
-                    <td>{new Date(tramiteSeleccionado.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                  <tr>
-                    <th>
-                      {tramiteSeleccionado.estado === "Aprobado"
-                        ? "Fecha de Aprobación"
-                        : tramiteSeleccionado.estado === "Rechazado"
-                          ? "Fecha de Rechazo"
-                          : "Fecha de Validación"}
-                    </th>
-                    <td>
-                      {tramiteSeleccionado.reviewedAt
-                        ? new Date(tramiteSeleccionado.reviewedAt).toLocaleDateString()
-                        : "-"}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Estado</th>
-                    <td>{tramiteSeleccionado.estado}</td>
-                  </tr>
-                </tbody>
-              </table>
+<table className="tabla-detalle">
+  <tbody>
+    <tr>
+      <th>Folio</th>
+      <td>{tramiteSeleccionado.folio || "Sin folio"}</td>
+    </tr>
+    <tr>
+      <th>Tipo de Trámite</th>
+      <td>{tramiteSeleccionado.tipo}</td>
+    </tr>
+    <tr>
+      <th>Fecha de Solicitud</th>
+      <td>{new Date(tramiteSeleccionado.createdAt).toLocaleDateString()}</td>
+    </tr>
+    <tr>
+      <th>
+        {tramiteSeleccionado.estado === "Aprobado"
+          ? "Fecha de Aprobación"
+          : tramiteSeleccionado.estado === "Rechazado"
+            ? "Fecha de Rechazo"
+            : "Fecha de Validación"}
+      </th>
+      <td>
+        {tramiteSeleccionado.reviewedAt
+          ? new Date(tramiteSeleccionado.reviewedAt).toLocaleDateString()
+          : "-"}
+      </td>
+    </tr>
+    <tr>
+      <th>Estado</th>
+      <td>{tramiteSeleccionado.estado}</td>
+    </tr>
+  </tbody>
+</table>
+
 
               <h3>Datos del Solicitante</h3>
               <table className="tabla-detalle">
@@ -213,15 +218,42 @@ const RevisorDashboard = () => {
               )}
 
               <div className="comentario-revisor">
-                <label htmlFor="comentario">Comentario del Revisor (opcional):</label>
-                <textarea
-                  id="comentario"
-                  rows={4}
-                  value={comentario}
-                  onChange={(e) => setComentario(e.target.value)}
-                  placeholder="Escribe un comentario si vas a rechazar el trámite..."
-                />
-              </div>
+  <label htmlFor="comentario">Comentario del Revisor (opcional):</label>
+
+  {tramiteSeleccionado.estado === "Rechazado" && tramiteSeleccionado.comentario_revisor ? (
+    <div
+      style={{
+        whiteSpace: "pre-wrap",
+        backgroundColor: "#fff8f8",
+        border: "1px solid #f5c2c7",
+        color: "#842029",
+        padding: "1rem",
+        marginTop: "0.5rem",
+        borderRadius: "5px",
+        fontSize: "0.95rem",
+      }}
+    >
+      {tramiteSeleccionado.comentario_revisor}
+    </div>
+  ) : (
+    <textarea
+      id="comentario"
+      rows={4}
+      value={comentario}
+      onChange={(e) => setComentario(e.target.value)}
+      placeholder="Escribe un comentario si vas a rechazar el trámite..."
+      style={{
+        marginTop: "0.5rem",
+        width: "100%",
+        padding: "0.75rem",
+        borderRadius: "5px",
+        border: "1px solid #ccc",
+        fontSize: "0.95rem",
+      }}
+    />
+  )}
+</div>
+
 
               <div className="botones-modal">
                 <button

@@ -42,7 +42,7 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
                 <td>{tramite.solicitante || "No especificado"}</td>
                 <td className={`estado ${tramite.estado?.toLowerCase() || ""}`}>
                   {tramite.estado || "Desconocido"}
-                  {tramite.estado === "Aprobado" && tramite.reviewedAt && (
+                  {(tramite.estado === "Aprobado" || tramite.estado === "Rechazado") && tramite.reviewedAt && (
                     <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
                       {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
                         day: "numeric",
@@ -71,7 +71,7 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
             ))
           ) : (
             <tr>
-              <td colSpan="6" style={{ textAlign: "center", color: "#888" }}>
+              <td colSpan="7" style={{ textAlign: "center", color: "#888" }}>
                 No se encontraron trámites.
               </td>
             </tr>
