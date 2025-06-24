@@ -13,17 +13,17 @@ const UserManagement = () => {
   const [editUser, setEditUser] = useState(null);
   const [editData, setEditData] = useState({ nombre: "", correo: "", rol: "", password: "" });
 
-  useEffect(() => {
-    fetchUsuarios();
-  }, [user]);
-
   const fetchUsuarios = async () => {
     const { data, error } = await supabase.from("usuarios").select("*");
     if (!error) setUsuarios(data);
   };
 
+  useEffect(() => {
+    fetchUsuarios();
+  }, [user]);
+
   if (!user || (user.rol !== "admin" && user.rol !== "admin_usuarios")) {
-    return <p style={{ textAlign: "center", marginTop: "2rem" }}>No tienes permisos para ver esta página.</p>;
+    return <p>No tienes permisos para ver esta página.</p>;
   }
 
   const handleCreate = async () => {
@@ -69,6 +69,7 @@ const UserManagement = () => {
 
   const handleUpdate = async () => {
     const { nombre, correo, rol, password } = editData;
+
     if (!nombre || !correo || !rol) return alert("Faltan datos");
     if (!/\S+@\S+\.\S+/.test(correo)) return alert("Correo inválido");
 
@@ -112,22 +113,10 @@ const UserManagement = () => {
   );
 
   return (
-    <div style={container}>
-      <h2 style={heading}>Crear Usuario</h2>
-      <input placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} style={inputStyle} />
-      <input placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-      <input placeholder="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
-      <select value={rol} onChange={(e) => setRol(e.target.value)} style={inputStyle}>
-        <option value="revisor">revisor</option>
-        <option value="admin">admin</option>
-        <option value="admin_tramites">admin_tramites</option>
-        <option value="admin_usuarios">admin_usuarios</option>
-        <option value="admin_charts">admin_charts</option>
-        <option value="usuario">usuario</option>
-      </select>
-      <button onClick={handleCreate} style={btnPrimary}>Crear</button>
+    <div style={{ maxWidth: "700px", margin: "2rem auto", padding: "2rem", background: "#fff", borderRadius: "10px", boxShadow: "0 0 10px rgba(0,0,0,0.1)" }}>
+      
 
-      <h2 style={heading}>Usuarios Registrados</h2>
+     <h2 style={heading}>Usuarios Registrados</h2>
       <input
         placeholder="Buscar por nombre o correo"
         value={filtro}

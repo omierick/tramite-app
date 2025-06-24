@@ -513,3 +513,34 @@
 .tab-content {
   padding: 1rem 0;
 }
+.area-container {
+  padding: 1rem;
+}
+
+.form-area input,
+.form-area textarea {
+  display: block;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.form-area button {
+  padding: 0.5rem 1rem;
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.tabla-areas {
+  margin-top: 1rem;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-areas th,
+.tabla-areas td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+}

@@ -8,11 +8,12 @@ import DashboardCharts from "./AdminDashboard/DashboardCharts";
 import CrearTramiteForm from "./AdminDashboard/CrearTramiteForm";
 import TramitesTable from "./AdminDashboard/TramitesTable";
 import TiposTramiteGrid from "./AdminDashboard/TiposTramiteGrid";
+import UserManagement from "../components/UserManagement";
+import AreaManagement from "../components/AreaManagement";
+import { useAuth } from "../context/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./AdminDashboard.css";
-import UserManagement from "../components/UserManagement";
-import { useAuth } from "../context/AuthContext";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -65,32 +66,31 @@ const AdminDashboard = () => {
   }).length;
 
   const tramitesFiltrados = useMemo(() => {
-  let filtrados = [...tramites];
+    let filtrados = [...tramites];
 
-  if (filtroEstado !== "todos") {
-    filtrados = filtrados.filter(t => t.estado === filtroEstado);
-  }
+    if (filtroEstado !== "todos") {
+      filtrados = filtrados.filter(t => t.estado === filtroEstado);
+    }
 
-  if (busqueda.trim() !== "") {
-    const termino = busqueda.toLowerCase();
-    filtrados = filtrados.filter((t) =>
-      (t.tipo ?? "").toString().toLowerCase().includes(termino) ||
-      (t.solicitante ?? "").toString().toLowerCase().includes(termino) ||
-      (t.folio ?? "").toString().toLowerCase().includes(termino) // agregado con control
-    );
-  }
+    if (busqueda.trim() !== "") {
+      const termino = busqueda.toLowerCase();
+      filtrados = filtrados.filter((t) =>
+        (t.tipo ?? "").toLowerCase().includes(termino) ||
+        (t.solicitante ?? "").toLowerCase().includes(termino) ||
+        (t.folio ?? "").toLowerCase().includes(termino)
+      );
+    }
 
-  if (orden === "recientes") {
-    filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  } else if (orden === "antiguos") {
-    filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  } else if (orden === "tipo") {
-    filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
-  }
+    if (orden === "recientes") {
+      filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (orden === "antiguos") {
+      filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (orden === "tipo") {
+      filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
+    }
 
-  return filtrados;
-}, [tramites, filtroEstado, busqueda, orden]);
-
+    return filtrados;
+  }, [tramites, filtroEstado, busqueda, orden]);
 
   const pagesVisited = pageNumber * itemsPerPage;
   const displayTramites = tramitesFiltrados.slice(pagesVisited, pagesVisited + itemsPerPage);
@@ -107,20 +107,20 @@ const AdminDashboard = () => {
   };
 
   const handleCrearTramite = (logo = null) => {
-  if (nombreTramite.trim() && campos.length > 0) {
-    addTipoTramite({
-      id: uuidv4(),
-      nombre: nombreTramite,
-      campos: campos,
-      logo_url: logo || null // nuevo campo
-    });
-    setNombreTramite("");
-    setCampos([]);
-    alert("Nuevo tipo de trámite creado exitosamente.");
-  } else {
-    alert("Completa el nombre del trámite y agrega al menos un campo.");
-  }
-};
+    if (nombreTramite.trim() && campos.length > 0) {
+      addTipoTramite({
+        id: uuidv4(),
+        nombre: nombreTramite,
+        campos: campos,
+        logo_url: logo || null
+      });
+      setNombreTramite("");
+      setCampos([]);
+      alert("Nuevo tipo de trámite creado exitosamente.");
+    } else {
+      alert("Completa el nombre del trámite y agrega al menos un campo.");
+    }
+  };
 
   const handleExportDashboard = () => {
     const input = dashboardRef.current;
@@ -162,9 +162,16 @@ const AdminDashboard = () => {
             Tipos de Trámite
           </button>
           {puedeGestionarUsuarios && (
-            <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>
-              Gestión de Usuarios
-            </button>
+            <>
+              <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>
+                Gestión de Usuarios
+              </button>
+              <button  className={`tab-button ${activeTab === "areas" ? "active" : ""}`}
+                        onClick={() => setActiveTab("areas")}
+                      >
+  Gestión de Áreas
+</button>
+            </>
           )}
         </div>
 
@@ -194,7 +201,7 @@ const AdminDashboard = () => {
             campoNuevo={campoNuevo}
             setCampoNuevo={setCampoNuevo}
             campos={campos}
-            handleAddCampo={handleAddCampo}
+            setCampos={setCampos} // ✅ Esta línea es la clave
             handleCrearTramite={handleCrearTramite}
           />
         )}
@@ -238,6 +245,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "usuarios" && puedeGestionarUsuarios && <UserManagement />}
+        {activeTab === "areas" && <AreaManagement />}
       </div>
     </>
   );

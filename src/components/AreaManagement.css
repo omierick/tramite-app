@@ -1,0 +1,67 @@
+.gestion-usuarios-container {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  max-width: 800px;
+  margin: auto;
+}
+
+.gestion-usuarios-container h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  color: #333;
+  text-align: center;
+}
+
+.formulario-agregar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.formulario-agregar input,
+.formulario-agregar textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.formulario-agregar button {
+  background-color: #007BFF;
+  color: white;
+  font-weight: bold;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.formulario-agregar button:hover {
+  background-color: #0056b3;
+}
+
+.tabla-usuarios {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-usuarios th,
+.tabla-usuarios td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.tabla-usuarios th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+.tabla-usuarios tr:nth-child(even) {
+  background-color: #f9f9f9;
+}

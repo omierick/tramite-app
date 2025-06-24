@@ -2,6 +2,16 @@
 import ReactPaginate from "react-paginate";
 import { generatePDF } from "../../utils/pdfUtils";
 
+const formatearFecha = (fechaIso) => {
+  const fecha = new Date(fechaIso);
+  const dia = fecha.getDate().toString().padStart(2, "0");
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
+  const año = fecha.getFullYear();
+  const horas = fecha.getHours().toString().padStart(2, "0");
+  const minutos = fecha.getMinutes().toString().padStart(2, "0");
+  return `${dia}/${mes}/${año} ${horas}:${minutos}`;
+};
+
 const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPage }) => {
   const handleDescargarPDF = (tramite) => {
     const tramiteConFechas = {
@@ -24,7 +34,8 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
             <th>Tipo de Trámite</th>
             <th>Solicitante</th>
             <th>Estado</th>
-            <th>Fecha de Creación</th>
+            <th>Fecha de Solicitud</th>
+            <th>Fecha de Revisión</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -41,22 +52,22 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
                 <td>{tramite.tipo}</td>
                 <td>{tramite.solicitante || "No especificado"}</td>
                 <td className={`estado ${tramite.estado?.toLowerCase() || ""}`}>
-                  {tramite.estado || "Desconocido"}
-                  {(tramite.estado === "Aprobado" || tramite.estado === "Rechazado") && tramite.reviewedAt && (
-                    <div style={{ fontSize: "0.8rem", color: "#888", marginTop: "4px" }}>
-                      {new Date(tramite.reviewedAt).toLocaleDateString("es-MX", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
+                  <strong>{tramite.estado || "Desconocido"}</strong>
+                  {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#c00",
+                        marginTop: "4px",
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      Motivo de Rechazo: {tramite.comentario_revisor}
                     </div>
                   )}
                 </td>
-                <td>
-                  {tramite.createdAt
-                    ? new Date(tramite.createdAt).toLocaleString()
-                    : "Sin fecha"}
-                </td>
+                <td>{tramite.createdAt ? formatearFecha(tramite.createdAt) : "Sin fecha"}</td>
+                <td>{tramite.reviewedAt ? formatearFecha(tramite.reviewedAt) : "-"}</td>
                 <td>
                   {tramite.estado === "Aprobado" && (
                     <button
@@ -71,7 +82,7 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
             ))
           ) : (
             <tr>
-              <td colSpan="7" style={{ textAlign: "center", color: "#888" }}>
+              <td colSpan="8" style={{ textAlign: "center", color: "#888" }}>
                 No se encontraron trámites.
               </td>
             </tr>

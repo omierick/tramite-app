@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
 import { generatePDF } from "../utils/pdfUtils";
 import { sendTramiteEmail } from "../services/emailService";
 import "./RevisorDashboard.css";
+
+const formatearFecha = (fechaIso) => {
+  if (!fechaIso) return "-";
+  const fecha = new Date(fechaIso);
+  const dia = fecha.getDate().toString().padStart(2, "0");
+  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
+  const año = fecha.getFullYear();
+  const horas = fecha.getHours().toString().padStart(2, "0");
+  const minutos = fecha.getMinutes().toString().padStart(2, "0");
+  return `${dia}/${mes}/${año} - ${horas}:${minutos}`;
+};
 
 const RevisorDashboard = () => {
   const { tramites, updateTramiteEstado, setNombreUsuario, setRolUsuario } = useTramites();
@@ -12,47 +23,69 @@ const RevisorDashboard = () => {
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [orden, setOrden] = useState("recientes");
+  const [mostrarSoloSeleccionado, setMostrarSoloSeleccionado] = useState(false);
+  const textareaRef = useRef(null);
 
   const handleAprobar = async (id) => {
     updateTramiteEstado(id, "Aprobado");
-
     const tramite = tramites.find(t => t.id === id);
     if (tramite) {
       await sendTramiteEmail({ ...tramite, estado: "Aprobado" });
     }
-
     setTramiteSeleccionado(null);
     setComentario("");
+    setMostrarSoloSeleccionado(false);
   };
 
   const handleRechazar = async (id) => {
-    updateTramiteEstado(id, "Rechazado", comentario);
-
     const tramite = tramites.find(t => t.id === id);
-    if (tramite) {
-      await sendTramiteEmail({
-        ...tramite,
-        estado: "Rechazado",
-        comentarioRevisor: comentario,
-      });
+
+    if (!tramiteSeleccionado || tramiteSeleccionado.id !== id) {
+      setComentario("");
+      setTramiteSeleccionado(tramite);
+      setMostrarSoloSeleccionado(true);
+      return;
     }
 
+    if (tramite.estado === "Rechazado") {
+      const yaTieneComentario = tramite.comentario_revisor?.trim();
+      alert(`Este trámite ya fue rechazado.${yaTieneComentario ? `\nComentario previo: ${tramite.comentario_revisor}` : "\nNo hay comentario registrado."}`);
+      return;
+    }
+
+    if (tramite.estado === "Aprobado") {
+      const confirmar = confirm("Este trámite ya fue aprobado. ¿Deseas rechazarlo de todos modos?");
+      if (!confirmar) return;
+    }
+
+    if (!comentario.trim()) {
+      if (textareaRef.current) {
+        textareaRef.current.classList.add("input-error");
+        textareaRef.current.focus();
+        textareaRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => textareaRef.current.classList.remove("input-error"), 1000);
+      }
+      return;
+    }
+
+    updateTramiteEstado(id, "Rechazado", comentario);
+    if (tramite) {
+      await sendTramiteEmail({ ...tramite, estado: "Rechazado", comentarioRevisor: comentario });
+    }
     setComentario("");
     setTramiteSeleccionado(null);
-  };
-
-  const handleCerrarSesion = () => {
-    setNombreUsuario("");
-    setRolUsuario("");
+    setMostrarSoloSeleccionado(false);
   };
 
   const handleVerDetalles = (tramite) => {
     setComentario("");
     setTramiteSeleccionado(tramite);
+    setMostrarSoloSeleccionado(true);
   };
 
   const tramitesFiltrados = tramites
     .filter((t) => {
+      if (mostrarSoloSeleccionado && tramiteSeleccionado) return t.id === tramiteSeleccionado.id;
       if (filtroEstado !== "todos" && t.estado !== filtroEstado) return false;
       return (
         (t.folio ?? "").toString().toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -61,13 +94,9 @@ const RevisorDashboard = () => {
       );
     })
     .sort((a, b) => {
-      if (orden === "recientes") {
-        return new Date(b.createdAt) - new Date(a.createdAt);
-      } else if (orden === "antiguos") {
-        return new Date(a.createdAt) - new Date(b.createdAt);
-      } else if (orden === "tipo") {
-        return (a.tipo ?? "").localeCompare(b.tipo ?? "");
-      }
+      if (orden === "recientes") return new Date(b.createdAt) - new Date(a.createdAt);
+      if (orden === "antiguos") return new Date(a.createdAt) - new Date(b.createdAt);
+      if (orden === "tipo") return (a.tipo ?? "").localeCompare(b.tipo ?? "");
       return 0;
     });
 
@@ -78,11 +107,7 @@ const RevisorDashboard = () => {
         <h2>Revisión de Trámites</h2>
 
         <div className="filtros-container">
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="filtro-select"
-          >
+          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="filtro-select">
             <option value="todos">Todos</option>
             <option value="Pendiente">Pendientes</option>
             <option value="Aprobado">Aprobados</option>
@@ -97,11 +122,7 @@ const RevisorDashboard = () => {
             className="input-busqueda"
           />
 
-          <select
-            value={orden}
-            onChange={(e) => setOrden(e.target.value)}
-            className="filtro-select"
-          >
+          <select value={orden} onChange={(e) => setOrden(e.target.value)} className="filtro-select">
             <option value="recientes">Más recientes</option>
             <option value="antiguos">Más antiguos</option>
             <option value="tipo">Ordenar por tipo</option>
@@ -126,20 +147,14 @@ const RevisorDashboard = () => {
             <tbody>
               {tramitesFiltrados.map((tramite) => (
                 <tr key={tramite.id}>
-                  <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-                    {tramite.folio || "Sin folio"}
-                  </td>
+                  <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>{tramite.folio || "Sin folio"}</td>
                   <td>{tramite.tipo}</td>
                   <td>{tramite.solicitante || "No especificado"}</td>
                   <td className={`estado ${tramite.estado.toLowerCase()}`}>{tramite.estado}</td>
-                  <td>{new Date(tramite.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    {tramite.reviewedAt
-                      ? new Date(tramite.reviewedAt).toLocaleDateString()
-                      : "-"}
-                  </td>
+                  <td>{formatearFecha(tramite.createdAt)}</td>
+                  <td>{formatearFecha(tramite.reviewedAt)}</td>
                   <td className="acciones">
-                    <button className="btn-ver" onClick={() => handleVerDetalles(tramite)}>Ver Detalles</button>
+                    <button className="btn-detalles" onClick={() => handleVerDetalles(tramite)}>Ver Detalles</button>
                     <button className="btn-aprobar" onClick={() => handleAprobar(tramite.id)}>Aprobar</button>
                     <button className="btn-rechazar" onClick={() => handleRechazar(tramite.id)}>Rechazar</button>
                   </td>
@@ -152,59 +167,33 @@ const RevisorDashboard = () => {
         {tramiteSeleccionado && (
           <div className="modal-overlay" onClick={(e) => {
             if (e.target.classList.contains('modal-overlay')) {
-              setTramiteSeleccionado(null);
               setComentario("");
+              setTramiteSeleccionado(null);
+              setMostrarSoloSeleccionado(false);
             }
           }}>
             <div className="modal-content">
               <h2>Municipalidad de Ejemplo</h2>
               <p className="subtitulo">Documento Validado de Trámite</p>
               <hr />
-
               <h3>Datos del Trámite</h3>
-<table className="tabla-detalle">
-  <tbody>
-    <tr>
-      <th>Folio</th>
-      <td>{tramiteSeleccionado.folio || "Sin folio"}</td>
-    </tr>
-    <tr>
-      <th>Tipo de Trámite</th>
-      <td>{tramiteSeleccionado.tipo}</td>
-    </tr>
-    <tr>
-      <th>Fecha de Solicitud</th>
-      <td>{new Date(tramiteSeleccionado.createdAt).toLocaleDateString()}</td>
-    </tr>
-    <tr>
-      <th>
-        {tramiteSeleccionado.estado === "Aprobado"
-          ? "Fecha de Aprobación"
-          : tramiteSeleccionado.estado === "Rechazado"
-            ? "Fecha de Rechazo"
-            : "Fecha de Validación"}
-      </th>
-      <td>
-        {tramiteSeleccionado.reviewedAt
-          ? new Date(tramiteSeleccionado.reviewedAt).toLocaleDateString()
-          : "-"}
-      </td>
-    </tr>
-    <tr>
-      <th>Estado</th>
-      <td>{tramiteSeleccionado.estado}</td>
-    </tr>
-  </tbody>
-</table>
-
+              <table className="tabla-detalle">
+                <tbody>
+                  <tr><th>Folio</th><td>{tramiteSeleccionado.folio || "Sin folio"}</td></tr>
+                  <tr><th>Tipo de Trámite</th><td>{tramiteSeleccionado.tipo}</td></tr>
+                  <tr><th>Fecha de Solicitud</th><td>{formatearFecha(tramiteSeleccionado.createdAt)}</td></tr>
+                  <tr>
+                    <th>{tramiteSeleccionado.estado === "Aprobado" ? "Fecha de Aprobación" : tramiteSeleccionado.estado === "Rechazado" ? "Fecha de Rechazo" : "Fecha de Validación"}</th>
+                    <td>{formatearFecha(tramiteSeleccionado.reviewedAt)}</td>
+                  </tr>
+                  <tr><th>Estado</th><td>{tramiteSeleccionado.estado}</td></tr>
+                </tbody>
+              </table>
 
               <h3>Datos del Solicitante</h3>
               <table className="tabla-detalle">
                 <tbody>
-                  <tr>
-                    <th>Nombre Completo</th>
-                    <td>{tramiteSeleccionado.solicitante || "-"}</td>
-                  </tr>
+                  <tr><th>Nombre Completo</th><td>{tramiteSeleccionado.solicitante || "-"}</td></tr>
                 </tbody>
               </table>
 
@@ -218,59 +207,28 @@ const RevisorDashboard = () => {
               )}
 
               <div className="comentario-revisor">
-  <label htmlFor="comentario">Comentario del Revisor (opcional):</label>
-
-  {tramiteSeleccionado.estado === "Rechazado" && tramiteSeleccionado.comentario_revisor ? (
-    <div
-      style={{
-        whiteSpace: "pre-wrap",
-        backgroundColor: "#fff8f8",
-        border: "1px solid #f5c2c7",
-        color: "#842029",
-        padding: "1rem",
-        marginTop: "0.5rem",
-        borderRadius: "5px",
-        fontSize: "0.95rem",
-      }}
-    >
-      {tramiteSeleccionado.comentario_revisor}
-    </div>
-  ) : (
-    <textarea
-      id="comentario"
-      rows={4}
-      value={comentario}
-      onChange={(e) => setComentario(e.target.value)}
-      placeholder="Escribe un comentario si vas a rechazar el trámite..."
-      style={{
-        marginTop: "0.5rem",
-        width: "100%",
-        padding: "0.75rem",
-        borderRadius: "5px",
-        border: "1px solid #ccc",
-        fontSize: "0.95rem",
-      }}
-    />
-  )}
-</div>
-
+                <label htmlFor="comentario">Comentario del Revisor (obligatorio para rechazar):</label>
+                {tramiteSeleccionado.estado === "Rechazado" && tramiteSeleccionado.comentario_revisor ? (
+                  <div className="comentario-rechazo">{tramiteSeleccionado.comentario_revisor}</div>
+                ) : (
+                  <textarea
+                    id="comentario"
+                    ref={textareaRef}
+                    rows={4}
+                    value={comentario}
+                    onChange={(e) => setComentario(e.target.value)}
+                    placeholder="Escribe un comentario si vas a rechazar el trámite..."
+                  />
+                )}
+              </div>
 
               <div className="botones-modal">
-                <button
-                  className="btn-pdf"
-                  onClick={() => {
-                    const index = tramites.findIndex(t => t.id === tramiteSeleccionado.id);
-                    generatePDF(tramiteSeleccionado, index + 1);
-                  }}
-                >
-                  Descargar PDF
-                </button>
+                <button className="btn-pdf" onClick={() => generatePDF(tramiteSeleccionado)}>Descargar PDF</button>
                 <button className="btn-cerrar" onClick={() => {
                   setComentario("");
                   setTramiteSeleccionado(null);
-                }}>
-                  Cerrar
-                </button>
+                  setMostrarSoloSeleccionado(false);
+                }}>✖ Cerrar Detalle</button>
               </div>
             </div>
           </div>
