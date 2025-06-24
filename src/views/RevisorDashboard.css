@@ -56,9 +56,7 @@
 }
 
 /* Botones */
-.btn-detalles,
-.btn-aprobar,
-.btn-rechazar {
+.btn {
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
@@ -66,14 +64,17 @@
   cursor: pointer;
   font-size: 13px;
   transition: background-color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.btn-detalles {
-  background-color: #17a2b8;
+.btn-ver {
+  background-color: #0ea5e9;
   color: white;
 }
-.btn-detalles:hover {
-  background-color: #138496;
+.btn-ver:hover {
+  background-color: #0284c7;
 }
 
 .btn-aprobar {
@@ -92,106 +93,23 @@
   background-color: #c82333;
 }
 
-/* Modal de Vista Previa */
-.overlay-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.detalle-modal {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 95%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0px 5px 25px rgba(0, 0, 0, 0.3);
-  animation: fadeIn 0.3s ease;
-}
-
-.detalle-modal table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.detalle-modal th, .detalle-modal td {
-  border: 1px solid #ccc;
-  padding: 8px 10px;
-  font-size: 14px;
-}
-
-.detalle-modal th {
-  background-color: #f0f2f5;
-  text-align: left;
-}
-
-/* Contenedor de la firma */
-.firma-preview-container {
+/* Modal Detalle */
+.modal-detalle {
   margin-top: 20px;
-  padding: 1rem;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  text-align: center;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.firma-img {
-  width: 100%;
-  max-height: 150px;
-  object-fit: contain;
+.modal-content p {
+  margin: 8px 0;
 }
 
-/* Botones del modal */
-.botones-modal {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.btn-pdf, .btn-cerrar {
-  flex: 1;
-  padding: 10px;
-  font-size: 14px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.btn-pdf {
-  background-color: #2563eb;
-  color: white;
-}
-
-.btn-cerrar {
-  background-color: #dc2626;
-  color: white;
-}
-
-.btn-pdf:hover {
-  background-color: #1e40af;
-}
-
-.btn-cerrar:hover {
-  background-color: #b91c1c;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.comentario-revisor {
-  margin: 1rem 0;
+.comentario-revisor label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
 }
 
 .comentario-revisor textarea {
@@ -200,25 +118,42 @@
   border-radius: 6px;
   border: 1px solid #ccc;
   resize: vertical;
+  font-size: 14px;
 }
 
-.input-busqueda {
-  padding: 8px 12px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  width: 100%;
-  max-width: 300px;
-  margin: 20px 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+.comentario-rechazo {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  font-style: italic;
+  color: #b91c1c;
 }
 
-.input-busqueda:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+.acciones-modal {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
 }
+
+.btn-pdf {
+  background-color: #3b82f6;
+  color: white;
+}
+.btn-pdf:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-cerrar {
+  background-color: #64748b;
+  color: white;
+}
+.btn-cerrar:hover {
+  background-color: #475569;
+}
+
+/* Filtros */
 .filtros-container {
   display: flex;
   flex-wrap: wrap;
@@ -241,4 +176,23 @@
 .filtro-select:focus,
 .input-busqueda:focus {
   border-color: #2563eb;
+}
+
+.input-busqueda {
+  width: 100%;
+  max-width: 300px;
+  margin: 20px 0;
+}
+
+.resaltar-error {
+  border: 2px solid red !important;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
 }
