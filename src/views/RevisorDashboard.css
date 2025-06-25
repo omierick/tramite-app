@@ -160,17 +160,21 @@
   gap: 12px;
   margin: 20px 0;
   align-items: center;
+  justify-content: center;
 }
 
 .filtro-select,
 .input-busqueda {
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 8px;
   outline: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: border-color 0.2s ease-in-out;
+  height: 42px;
+  display: flex;
+  align-items: center;
 }
 
 .filtro-select:focus,
@@ -181,18 +185,4 @@
 .input-busqueda {
   width: 100%;
   max-width: 300px;
-  margin: 20px 0;
-}
-
-.resaltar-error {
-  border: 2px solid red !important;
-  animation: shake 0.3s ease;
-}
-
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  50% { transform: translateX(4px); }
-  75% { transform: translateX(-4px); }
-  100% { transform: translateX(0); }
 }

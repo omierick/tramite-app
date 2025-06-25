@@ -1,55 +1,57 @@
-import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
-import { supabase } from "../services/supabaseClient";
+import { useState } from "react";
+import "./AreaManagement.css";
 
-const UserManagement = () => {
-  const { user } = useAuth();
-  const [usuarios, setUsuarios] = useState([]);
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rol, setRol] = useState("revisor");
+const registrosIniciales = [...Array(30)].map((_, i) => ({
+  id: i + 1,
+  nombre: `Área ${i + 1}`,
+  responsable: `Responsable ${i + 1}`,
+  correo: `area${i + 1}@omieave.com`,
+  telefono: `555-10${String(i + 1).padStart(2, "0")}`,
+  ubicacion: `Edificio ${String.fromCharCode(65 + (i % 10))}`,
+  descripcion: `Descripción del área ${i + 1}`,
+}));
+
+const AreaManagement = () => {
+  const [areas, setAreas] = useState(registrosIniciales);
   const [filtro, setFiltro] = useState("");
-  const [editUser, setEditUser] = useState(null);
-  const [editData, setEditData] = useState({ nombre: "", correo: "", rol: "", password: "" });
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 10;
 
-  const fetchUsuarios = async () => {
-    const { data, error } = await supabase.from("usuarios").select("*");
-    if (!error) setUsuarios(data);
+  const [nombre, setNombre] = useState("");
+  const [responsable, setResponsable] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [ubicacion, setUbicacion] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+
+  const [editArea, setEditArea] = useState(null);
+  const [editData, setEditData] = useState({
+    nombre: "",
+    responsable: "",
+    correo: "",
+    telefono: "",
+    ubicacion: "",
+    descripcion: ""
+  });
+
+  const handleCrearArea = () => {
+    if (!nombre || !responsable || !correo) return alert("Faltan campos obligatorios");
+    const nuevaArea = {
+      id: areas.length + 1,
+      nombre, responsable, correo, telefono, ubicacion, descripcion,
+    };
+    setAreas([...areas, nuevaArea]);
+    setNombre(""); setResponsable(""); setCorreo(""); setTelefono(""); setUbicacion(""); setDescripcion("");
   };
 
-  useEffect(() => {
-    fetchUsuarios();
-  }, [user]);
+  const abrirModalEdicion = (area) => {
+    setEditArea(area.id);
+    setEditData({ ...area });
+  };
 
-  if (!user || (user.rol !== "admin" && user.rol !== "admin_usuarios")) {
-    return <p>No tienes permisos para ver esta página.</p>;
-  }
-
-  const handleCreate = async () => {
-    if (!nombre || !email || !password || !rol) return alert("Faltan datos");
-    if (!/\S+@\S+\.\S+/.test(email)) return alert("Correo inválido");
-    if (password.length < 6) return alert("Contraseña debe tener al menos 6 caracteres");
-
-    const { data: existente } = await supabase
-      .from("usuarios")
-      .select("correo")
-      .eq("correo", email)
-      .single();
-
-    if (existente) return alert("Correo ya registrado.");
-
-    const { error } = await supabase
-      .from("usuarios")
-      .insert([{ nombre, correo: email, password, rol }]);
-
-    if (!error) {
-      alert("Usuario creado");
-      setNombre(""); setEmail(""); setPassword(""); setRol("revisor");
-      fetchUsuarios();
-    } else {
-      alert("Error al crear: " + error.message);
-    }
+  const guardarEdicion = () => {
+    setAreas((prev) => prev.map((a) => (a.id === editArea ? { ...editData, id: a.id } : a)));
+    setEditArea(null);
   };
 
   const handleEditChange = (e) => {
@@ -57,119 +59,99 @@ const UserManagement = () => {
     setEditData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const openEditModal = (usuario) => {
-    setEditUser(usuario.correo);
-    setEditData({
-      nombre: usuario.nombre,
-      correo: usuario.correo,
-      rol: usuario.rol,
-      password: ""
-    });
+  const eliminarArea = (id) => {
+    const confirmar = window.confirm("¿Estás seguro de eliminar esta área?");
+    if (!confirmar) return;
+    setAreas((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const handleUpdate = async () => {
-    const { nombre, correo, rol, password } = editData;
+  const areasFiltradas = areas.filter((a) => a.nombre.toLowerCase().includes(filtro) || a.responsable.toLowerCase().includes(filtro));
+  const totalPaginas = Math.ceil(areasFiltradas.length / itemsPorPagina);
+  const inicio = (paginaActual - 1) * itemsPorPagina;
+  const paginados = areasFiltradas.slice(inicio, inicio + itemsPorPagina);
 
-    if (!nombre || !correo || !rol) return alert("Faltan datos");
-    if (!/\S+@\S+\.\S+/.test(correo)) return alert("Correo inválido");
-
-    const updateFields = { nombre, correo, rol };
-    if (password?.trim()) {
-      if (password.length < 6) return alert("La contraseña debe tener al menos 6 caracteres");
-      updateFields.password = password;
-    }
-
-    const { error } = await supabase
-      .from("usuarios")
-      .update(updateFields)
-      .eq("correo", editUser);
-
-    if (!error) {
-      alert("Usuario actualizado");
-      setEditUser(null);
-      fetchUsuarios();
-    } else {
-      alert("Error al actualizar: " + error.message);
-    }
+  const cambiarPagina = (num) => {
+    if (num >= 1 && num <= totalPaginas) setPaginaActual(num);
   };
-
-  const handleDeleteUser = async (correo) => {
-    const confirmed = window.confirm("¿Estás seguro de eliminar este usuario?");
-    if (!confirmed) return;
-
-    const { error } = await supabase.from("usuarios").delete().eq("correo", correo);
-    if (!error) {
-      alert("Usuario eliminado");
-      fetchUsuarios();
-    } else {
-      alert("Error al eliminar: " + error.message);
-    }
-  };
-
-  const usuariosFiltrados = usuarios.filter(
-    (u) =>
-      u.nombre.toLowerCase().includes(filtro) ||
-      u.correo.toLowerCase().includes(filtro)
-  );
 
   return (
-    <div style={{ maxWidth: "700px", margin: "2rem auto", padding: "2rem", background: "#fff", borderRadius: "10px", boxShadow: "0 0 10px rgba(0,0,0,0.1)" }}>
-      
+    <div className="area-container">
+      <h2 className="area-heading">Crear Nueva Área</h2>
+      <input className="area-input" placeholder="Nombre del Área" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+      <input className="area-input" placeholder="Responsable del Área" value={responsable} onChange={(e) => setResponsable(e.target.value)} />
+      <input className="area-input" placeholder="Correo institucional" value={correo} onChange={(e) => setCorreo(e.target.value)} />
+      <input className="area-input" placeholder="Teléfono de contacto" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+      <input className="area-input" placeholder="Ubicación física" value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} />
+      <input className="area-input" placeholder="Descripción general" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+      <button className="area-btn-primary" onClick={handleCrearArea}>Crear</button>
 
-     <h2 style={heading}>Usuarios Registrados</h2>
-      <input
-        placeholder="Buscar por nombre o correo"
-        value={filtro}
-        onChange={(e) => setFiltro(e.target.value.toLowerCase())}
-        style={{ ...inputStyle, marginBottom: "1rem" }}
-      />
+      <h2 className="area-heading">Áreas Registradas</h2>
+      <input className="area-input" placeholder="Buscar por nombre o responsable" value={filtro} onChange={(e) => { setFiltro(e.target.value.toLowerCase()); setPaginaActual(1); }} />
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1rem" }}>
+      <div className="area-table-wrapper">
+        <table className="area-table">
           <thead>
-            <tr style={{ backgroundColor: "#f3f4f6" }}>
-              <th style={cellStyle}>Nombre</th>
-              <th style={cellStyle}>Correo</th>
-              <th style={cellStyle}>Rol</th>
-              <th style={cellStyle}>Acciones</th>
+            <tr>
+              <th>Nombre</th>
+              <th>Responsable</th>
+              <th>Correo</th>
+              <th>Teléfono</th>
+              <th>Ubicación</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {usuariosFiltrados.map((u) => (
-              <tr key={u.correo}>
-                <td style={cellStyle}>{u.nombre}</td>
-                <td style={cellStyle}>{u.correo}</td>
-                <td style={cellStyle}>{u.rol}</td>
-                <td style={cellStyle}>
+            {paginados.map((a) => (
+              <tr key={a.id}>
+                <td>{a.nombre}</td>
+                <td>{a.responsable}</td>
+                <td>{a.correo}</td>
+                <td>{a.telefono}</td>
+                <td>{a.ubicacion}</td>
+                <td>{a.descripcion}</td>
+                <td>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => openEditModal(u)} style={btnEdit}>Editar</button>
-                    <button onClick={() => handleDeleteUser(u.correo)} style={btnDanger}>Eliminar</button>
+                    <button className="area-btn-edit" onClick={() => abrirModalEdicion(a)}>Editar</button>
+                    <button className="area-btn-danger" onClick={() => eliminarArea(a.id)}>Eliminar</button>
                   </div>
                 </td>
               </tr>
             ))}
+            {paginados.length === 0 && <tr><td colSpan="7" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron resultados.</td></tr>}
           </tbody>
         </table>
       </div>
 
-      {editUser && (
-        <div style={modalOverlay}>
-          <div style={modalContent}>
-            <h3 style={{ marginBottom: "1rem" }}>Editar Usuario</h3>
-            <input name="nombre" value={editData.nombre} onChange={handleEditChange} style={inputStyle} />
-            <input name="correo" value={editData.correo} onChange={handleEditChange} style={inputStyle} />
-            <input name="password" type="password" placeholder="Nueva contraseña (opcional)" value={editData.password} onChange={handleEditChange} style={inputStyle} />
-            <select name="rol" value={editData.rol} onChange={handleEditChange} style={inputStyle}>
-              <option value="revisor">revisor</option>
-              <option value="admin">admin</option>
-              <option value="admin_tramites">admin_tramites</option>
-              <option value="admin_usuarios">admin_usuarios</option>
-              <option value="admin_charts">admin_charts</option>
-              <option value="usuario">usuario</option>
-            </select>
+      <div className="area-pagination">
+        {Array.from({ length: totalPaginas }, (_, i) => (
+          <button
+            key={i}
+            className={`area-page-btn ${paginaActual === i + 1 ? "active" : ""}`}
+            onClick={() => cambiarPagina(i + 1)}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+
+      {editArea && (
+        <div className="area-modal-overlay">
+          <div className="area-modal-content">
+            <h3 style={{ marginBottom: "1rem" }}>Editar Área</h3>
+            {Object.keys(editData).map((key) => (
+              <input
+                key={key}
+                className="area-input"
+                name={key}
+                value={editData[key]}
+                onChange={handleEditChange}
+                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+              />
+            ))}
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "1rem" }}>
-              <button onClick={handleUpdate} style={btnPrimary}>Guardar</button>
-              <button onClick={() => setEditUser(null)} style={btnCancel}>Cancelar</button>
+              <button className="area-btn-primary" onClick={guardarEdicion}>Guardar</button>
+              <button className="area-btn-cancel" onClick={() => setEditArea(null)}>Cancelar</button>
             </div>
           </div>
         </div>
@@ -178,95 +160,4 @@ const UserManagement = () => {
   );
 };
 
-// Estilos
-const container = {
-  maxWidth: "700px",
-  margin: "2rem auto",
-  padding: "2rem",
-  background: "#fff",
-  borderRadius: "10px",
-  boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-};
-
-const heading = {
-  marginTop: "1rem",
-  marginBottom: "1rem",
-  color: "#111827"
-};
-
-const inputStyle = {
-  width: "100%",
-  marginBottom: "0.5rem",
-  padding: "0.6rem",
-  borderRadius: "6px",
-  border: "1px solid #d1d5db",
-};
-
-const btnPrimary = {
-  background: "#2563eb",
-  color: "#fff",
-  border: "none",
-  padding: "0.6rem",
-  width: "100%",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
-const btnDanger = {
-  background: "#ef4444",
-  color: "#fff",
-  border: "none",
-  padding: "0.4rem 0.8rem",
-  borderRadius: "5px",
-  cursor: "pointer",
-  fontWeight: "bold",
-};
-
-const btnCancel = {
-  background: "#9ca3af",
-  color: "#fff",
-  border: "none",
-  padding: "0.6rem",
-  width: "100%",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
-const btnEdit = {
-  background: "#10b981",
-  color: "#fff",
-  border: "none",
-  padding: "0.4rem 0.8rem",
-  borderRadius: "5px",
-  cursor: "pointer",
-  fontWeight: "bold",
-};
-
-const cellStyle = {
-  border: "1px solid #e5e7eb",
-  padding: "8px",
-};
-
-const modalOverlay = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100vw",
-  height: "100vh",
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modalContent = {
-  background: "#fff",
-  padding: "2rem",
-  borderRadius: "10px",
-  width: "90%",
-  maxWidth: "400px",
-  boxShadow: "0 0 15px rgba(0,0,0,0.2)",
-};
-
-export default UserManagement;
+export default AreaManagement;

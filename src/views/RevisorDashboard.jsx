@@ -9,12 +9,44 @@ import "./RevisorDashboard.css";
 const formatearFecha = (fechaIso) => {
   if (!fechaIso) return "-";
   const fecha = new Date(fechaIso);
-  const dia = fecha.getDate().toString().padStart(2, "0");
-  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
-  const año = fecha.getFullYear();
-  const horas = fecha.getHours().toString().padStart(2, "0");
-  const minutos = fecha.getMinutes().toString().padStart(2, "0");
-  return `${dia}/${mes}/${año} ${horas}:${minutos}`;
+  const opciones = {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  };
+  const partes = new Intl.DateTimeFormat("es-MX", opciones).formatToParts(fecha);
+  const getPart = (type) => partes.find(p => p.type === type)?.value.padStart(2, '0');
+  const dia = getPart("day");
+  const mes = getPart("month");
+  const año = getPart("year");
+  const hora = getPart("hour");
+  const minuto = getPart("minute");
+  return `${dia}/${mes}/${año} ${hora}:${minuto}`;
+};
+
+const obtenerFechaCDMX = () => {
+  const fecha = new Date();
+  const opciones = {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  };
+  const partes = new Intl.DateTimeFormat("es-MX", opciones).formatToParts(fecha);
+  const getPart = (type) => partes.find(p => p.type === type)?.value.padStart(2, '0');
+  const año = getPart("year");
+  const mes = getPart("month");
+  const dia = getPart("day");
+  const hora = getPart("hour");
+  const minuto = getPart("minute");
+  return `${año}-${mes}-${dia}T${hora}:${minuto}:00`;
 };
 
 const RevisorDashboard = () => {
@@ -32,7 +64,11 @@ const RevisorDashboard = () => {
       return;
     }
 
-    updateTramiteEstado(id, "Aprobado");
+    const confirmar = window.confirm("¿Estás seguro de que deseas aprobar este trámite?");
+    if (!confirmar) return;
+
+    const reviewedAt = obtenerFechaCDMX();
+    updateTramiteEstado(id, "Aprobado", undefined, reviewedAt);
     if (tramite) await sendTramiteEmail({ ...tramite, estado: "Aprobado" });
     setTramiteSeleccionado(null);
     setComentario("");
@@ -68,7 +104,8 @@ const RevisorDashboard = () => {
       return;
     }
 
-    updateTramiteEstado(id, "Rechazado", comentario);
+    const reviewedAt = obtenerFechaCDMX();
+    updateTramiteEstado(id, "Rechazado", comentario, reviewedAt);
     if (tramite) await sendTramiteEmail({ ...tramite, estado: "Rechazado", comentarioRevisor: comentario });
     setComentario("");
     setTramiteSeleccionado(null);
@@ -136,7 +173,14 @@ const RevisorDashboard = () => {
                 <td>{tramite.folio}</td>
                 <td>{tramite.tipo}</td>
                 <td>{tramite.solicitante}</td>
-                <td className={`estado ${tramite.estado.toLowerCase()}`}>{tramite.estado}</td>
+                <td className={`estado ${tramite.estado.toLowerCase()}`}>
+                  <div>{tramite.estado}</div>
+                  {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
+                    <div style={{ fontSize: "0.85rem", marginTop: "4px", color: "#c53030" }}>
+                      <strong>Motivo:</strong> {tramite.comentario_revisor}
+                    </div>
+                  )}
+                </td>
                 <td>{formatearFecha(tramite.createdAt)}</td>
                 <td>{formatearFecha(tramite.reviewedAt)}</td>
                 <td className="acciones">

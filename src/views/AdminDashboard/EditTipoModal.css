@@ -1,3 +1,5 @@
+/* EditTipoModal.css */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -30,7 +32,8 @@
   margin-bottom: 0.5rem;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="file"] {
   width: 100%;
   padding: 0.6rem;
   margin-bottom: 0.5rem;
@@ -107,4 +110,29 @@ input[type="text"] {
   margin-top: 1.5rem;
   display: flex;
   justify-content: space-between;
+}
+
+/* Vista previa del logo */
+.logo-preview {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.logo-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.campos-scroll {
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 1rem;
+}
+
+.logo-preview img {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 0.5rem;
 }
