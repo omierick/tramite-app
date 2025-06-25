@@ -40,7 +40,8 @@ const AdminDashboard = () => {
   const puedeGestionarUsuarios = user.rol === "admin" || user.rol === "admin_usuarios";
   const puedeVerCharts = ["admin", "admin_charts"].includes(user.rol);
   const puedeVerTramites = ["admin", "admin_tramites"].includes(user.rol);
-  const puedeCrearTramite = user.rol === "admin";
+  const puedeCrearTramite = user.rol === "admin" || user.rol === "admin_tramites";
+
 
   const totalTramites = tramites.length;
   const pendientes = tramites.filter(t => t.estado === "Pendiente").length;
