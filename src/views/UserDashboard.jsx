@@ -12,24 +12,32 @@ import { sendTramiteEmail } from "../services/emailService";
 import "./UserDashboard.css";
 
 const schema = yup.object().shape({
-  email: yup.string().email("Correo inválido").required("El correo es obligatorio"),
+  email: yup
+    .string()
+    .email("Correo inválido")
+    .required("El correo es obligatorio"),
   firma: yup.string().required("Debes firmar el trámite antes de enviarlo"),
 });
 
 const formatFechaManual = (isoString) => {
   const date = new Date(isoString);
-  const mxDate = new Date(date.toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+  const mxDate = new Date(
+    date.toLocaleString("en-US", { timeZone: "America/Mexico_City" })
+  );
+
   const dia = String(mxDate.getDate()).padStart(2, "0");
   const mes = String(mxDate.getMonth() + 1).padStart(2, "0");
   const anio = mxDate.getFullYear();
   const horas = String(mxDate.getHours()).padStart(2, "0");
   const minutos = String(mxDate.getMinutes()).padStart(2, "0");
+
   return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
 };
 
 const UserDashboard = ({ setRole }) => {
   const { user } = useAuth();
-  const { tramites, tiposTramite, addTramite, updateTramiteCampos } = useTramites();
+  const { tramites, tiposTramite, addTramite, updateTramiteCampos } =
+    useTramites();
 
   const [tramiteSeleccionadoId, setTramiteSeleccionadoId] = useState("");
   const [selectedTipo, setSelectedTipo] = useState(null);
@@ -49,17 +57,15 @@ const UserDashboard = ({ setRole }) => {
 
   const handleSelectSubmit = (e) => {
     e.preventDefault();
-    const tipo = tiposTramite.find((tipo) => tipo.id.toString() === tramiteSeleccionadoId);
-    console.log("📦 Tipo seleccionado:", tipo);
+    const tipo = tiposTramite.find(
+      (tipo) => tipo.id.toString() === tramiteSeleccionadoId
+    );
     if (tipo) {
       setSelectedTipo(tipo);
       const initialData = {};
       tipo.campos.forEach((campo) => {
-        if (typeof campo.nombre === "string") {
+        if (typeof campo === "object")
           initialData[campo.nombre] = campo.tipo === "booleano" ? false : "";
-        } else {
-          console.warn("Campo con nombre inválido:", campo);
-        }
       });
       setFormData(initialData);
     } else {
@@ -68,7 +74,9 @@ const UserDashboard = ({ setRole }) => {
   };
 
   const handleChange = (e, campo) => {
-    setFormData({ ...formData, [campo]: e.target.value });
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [campo]: value });
   };
 
   const onSubmit = async () => {
@@ -126,7 +134,10 @@ const UserDashboard = ({ setRole }) => {
     generatePDF(tramiteConFechas);
   };
 
-  const tramitesUsuario = useMemo(() => tramites.filter((t) => t.solicitante === user.correo), [tramites, user]);
+  const tramitesUsuario = useMemo(
+    () => tramites.filter((t) => t.solicitante === user.correo),
+    [tramites, user]
+  );
 
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
@@ -134,14 +145,24 @@ const UserDashboard = ({ setRole }) => {
 
   const tramitesFiltrados = useMemo(() => {
     let filtrados = [...tramitesUsuario];
-    if (filtroEstado !== "todos") filtrados = filtrados.filter(t => t.estado === filtroEstado);
+    if (filtroEstado !== "todos")
+      filtrados = filtrados.filter((t) => t.estado === filtroEstado);
     if (busqueda.trim() !== "") {
       const termino = busqueda.toLowerCase();
-      filtrados = filtrados.filter(t => (t.tipo ?? "").toLowerCase().includes(termino) || (String(t.folio ?? "")).toLowerCase().includes(termino));
+      filtrados = filtrados.filter(
+        (t) =>
+          (t.tipo ?? "").toLowerCase().includes(termino) ||
+          String(t.folio ?? "")
+            .toLowerCase()
+            .includes(termino)
+      );
     }
-    if (orden === "recientes") filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    else if (orden === "antiguos") filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    else if (orden === "tipo") filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
+    if (orden === "recientes")
+      filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    else if (orden === "antiguos")
+      filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    else if (orden === "tipo")
+      filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
     return filtrados;
   }, [tramitesUsuario, filtroEstado, busqueda, orden]);
 
@@ -153,46 +174,67 @@ const UserDashboard = ({ setRole }) => {
 
         {editandoTramite || selectedTipo ? (
           <form className="tramite-form" onSubmit={handleSubmit(onSubmit)}>
-            <h3>{editandoTramite ? "Editar Trámite Rechazado" : `Nuevo Trámite: ${selectedTipo.nombre}`}</h3>
+            <h3>
+              {editandoTramite
+                ? "Editar Trámite Rechazado"
+                : `Nuevo Trámite: ${selectedTipo.nombre}`}
+            </h3>
 
             {selectedTipo.campos.map((campo, idx) => {
-              const nombreCampo = campo.nombre;
-              const tipoCampo = campo.tipo;
-
-              if (typeof nombreCampo !== "string" || typeof tipoCampo !== "string") {
-                console.error("Campo inválido:", campo);
-                return (
-                  <div key={idx} className="form-group">
-                    <p style={{ color: "red" }}>⚠️ Error: Campo inválido</p>
-                  </div>
-                );
-              }
-
+              if (typeof campo !== "object" || !campo.nombre || !campo.tipo)
+                return null;
+              const value = formData[campo.nombre];
               return (
                 <div key={idx} className="form-group">
-                  <label>{nombreCampo}:</label>
-                  <input
-                    type="text"
-                    value={formData[nombreCampo] || ""}
-                    onChange={(e) => handleChange(e, nombreCampo)}
-                    required
-                  />
+                  <label>{campo.nombre}:</label>
+                  {campo.tipo === "booleano" ? (
+                    <input
+                      type="checkbox"
+                      checked={!!value}
+                      onChange={(e) => handleChange(e, campo.nombre)}
+                    />
+                  ) : campo.tipo === "número" || campo.tipo === "numero" ? (
+                    <input
+                      type="number"
+                      value={value || ""}
+                      onChange={(e) => handleChange(e, campo.nombre)}
+                    />
+                  ) : campo.tipo === "fecha" ? (
+                    <input
+                      type="date"
+                      value={value || ""}
+                      onChange={(e) => handleChange(e, campo.nombre)}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={value || ""}
+                      onChange={(e) => handleChange(e, campo.nombre)}
+                    />
+                  )}
                 </div>
               );
             })}
 
             <div className="form-group">
               <label>Correo electrónico para actualizaciones:</label>
-              <input type="email" placeholder="Tu correo electrónico" {...register("email")} required />
+              <input
+                type="email"
+                placeholder="Tu correo electrónico"
+                {...register("email")}
+                required
+              />
               {errors.email && <p className="error">{errors.email.message}</p>}
             </div>
 
             <div className="form-group">
               <label>Firma del solicitante:</label>
-              <FirmaCanvas setFirma={(firmaData) => {
-                setFirma(firmaData);
-                setValue("firma", firmaData);
-              }} />
+              <FirmaCanvas
+                setFirma={(firmaData) => {
+                  setFirma(firmaData);
+                  setValue("firma", firmaData);
+                }}
+              />
               {errors.firma && <p className="error">{errors.firma.message}</p>}
             </div>
 
@@ -204,14 +246,22 @@ const UserDashboard = ({ setRole }) => {
           <form className="tramite-form" onSubmit={handleSelectSubmit}>
             <div className="form-group">
               <label>Selecciona un tipo de trámite:</label>
-              <select onChange={handleSelectChange} value={tramiteSeleccionadoId} required>
+              <select
+                onChange={handleSelectChange}
+                value={tramiteSeleccionadoId}
+                required
+              >
                 <option value="">-- Selecciona un trámite --</option>
                 {tiposTramite.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.nombre}
+                  </option>
                 ))}
               </select>
             </div>
-            <button className="btn-primary" type="submit">Continuar</button>
+            <button className="btn-primary" type="submit">
+              Continuar
+            </button>
           </form>
         )}
 
@@ -220,7 +270,10 @@ const UserDashboard = ({ setRole }) => {
             <h3>Mis Trámites Enviados</h3>
 
             <div className="filtros-container">
-              <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+              >
                 <option value="todos">Todos</option>
                 <option value="Pendiente">Pendiente</option>
                 <option value="Aprobado">Aprobado</option>
@@ -253,40 +306,77 @@ const UserDashboard = ({ setRole }) => {
               <tbody>
                 {tramitesFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "1rem", color: "#777" }}>
+                    <td
+                      colSpan="6"
+                      style={{
+                        textAlign: "center",
+                        padding: "1rem",
+                        color: "#777",
+                      }}
+                    >
                       No se encontraron coincidencias.
                     </td>
                   </tr>
                 ) : (
                   tramitesFiltrados.map((tramite) => (
                     <tr key={tramite.id}>
-                      <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                      <td
+                        style={{ fontFamily: "monospace", fontSize: "0.85rem" }}
+                      >
                         {tramite.folio || "Sin folio"}
                       </td>
                       <td>{tramite.tipo}</td>
                       <td className={`estado ${tramite.estado.toLowerCase()}`}>
-                        <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
-                        {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
-                          <div style={{ fontSize: "0.8rem", color: "#c00", marginTop: "4px" }}>
-                            <i className="fas fa-info-circle" style={{ marginRight: "4px" }}></i>
-                            <strong>Motivo:</strong> {tramite.comentario_revisor}
-                          </div>
-                        )}
+                        <span style={{ fontWeight: "bold" }}>
+                          {tramite.estado}
+                        </span>
+                        {tramite.estado === "Rechazado" &&
+                          tramite.comentario_revisor && (
+                            <div
+                              style={{
+                                fontSize: "0.8rem",
+                                color: "#c00",
+                                marginTop: "4px",
+                              }}
+                            >
+                              <i
+                                className="fas fa-info-circle"
+                                style={{ marginRight: "4px" }}
+                              ></i>
+                              <strong>Motivo:</strong>{" "}
+                              {tramite.comentario_revisor}
+                            </div>
+                          )}
                       </td>
                       <td style={{ fontSize: "0.85rem", color: "#444" }}>
-                        {tramite.createdAt ? formatFechaManual(tramite.createdAt) : "Desconocida"}
+                        {tramite.createdAt
+                          ? formatFechaManual(tramite.createdAt)
+                          : "Desconocida"}
                       </td>
-                      <td style={{ fontSize: "0.85rem", color: tramite.reviewedAt ? "#444" : "#888" }}>
-                        {tramite.reviewedAt ? formatFechaManual(tramite.reviewedAt) : "Sin revisión"}
+                      <td
+                        style={{
+                          fontSize: "0.85rem",
+                          color: tramite.reviewedAt ? "#444" : "#888",
+                        }}
+                      >
+                        {tramite.reviewedAt
+                          ? formatFechaManual(tramite.reviewedAt)
+                          : "Sin revisión"}
                       </td>
                       <td>
                         {tramite.estado === "Rechazado" && (
-                          <button className="btn-secondary" onClick={() => handleEditarTramite(tramite)}>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleEditarTramite(tramite)}
+                          >
                             Editar
                           </button>
                         )}
                         {tramite.estado === "Aprobado" && (
-                          <button className="btn-secondary" onClick={() => handleDescargarTramite(tramite)}>
+                          <button
+                            className="btn-secondary"
+                            onClick={() => handleDescargarTramite(tramite)}
+                          >
                             Descargar
                           </button>
                         )}
