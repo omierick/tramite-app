@@ -1,18 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../services/supabaseClient";
 import "./AreaManagement.css";
 
-const registrosIniciales = [...Array(30)].map((_, i) => ({
-  id: i + 1,
-  nombre: `Área ${i + 1}`,
-  responsable: `Responsable ${i + 1}`,
-  correo: `area${i + 1}@omieave.com`,
-  telefono: `555-10${String(i + 1).padStart(2, "0")}`,
-  ubicacion: `Edificio ${String.fromCharCode(65 + (i % 10))}`,
-  descripcion: `Descripción del área ${i + 1}`,
-}));
-
 const AreaManagement = () => {
-  const [areas, setAreas] = useState(registrosIniciales);
+  const [areas, setAreas] = useState([]);
   const [filtro, setFiltro] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
   const itemsPorPagina = 10;
@@ -24,34 +15,111 @@ const AreaManagement = () => {
   const [ubicacion, setUbicacion] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
-  const [editArea, setEditArea] = useState(null);
+  const [editAreaId, setEditAreaId] = useState(null);
   const [editData, setEditData] = useState({
     nombre: "",
     responsable: "",
     correo: "",
     telefono: "",
     ubicacion: "",
-    descripcion: ""
+    descripcion: "",
   });
 
-  const handleCrearArea = () => {
-    if (!nombre || !responsable || !correo) return alert("Faltan campos obligatorios");
+  useEffect(() => {
+    fetchAreas();
+  }, []);
+
+  const fetchAreas = async () => {
+    const { data, error } = await supabase.from("areas").select("*");
+    if (!error) setAreas(data);
+    else console.error("Error al cargar áreas:", error);
+  };
+
+  const correoValido = (valor) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
+  const telefonoValido = (valor) => /^\d+$/.test(valor);
+
+  const handleCrearArea = async () => {
+    if (!nombre || !responsable || !correo || !telefono) {
+      alert("Todos los campos obligatorios deben ser completados.");
+      return;
+    }
+
+    if (!correoValido(correo)) {
+      alert("Correo inválido.");
+      return;
+    }
+
+    if (!telefonoValido(telefono)) {
+      alert("El teléfono debe contener solo números.");
+      return;
+    }
+
     const nuevaArea = {
-      id: areas.length + 1,
-      nombre, responsable, correo, telefono, ubicacion, descripcion,
+      nombre,
+      responsable,
+      correo,
+      telefono,
+      ubicacion,
+      descripcion,
     };
-    setAreas([...areas, nuevaArea]);
-    setNombre(""); setResponsable(""); setCorreo(""); setTelefono(""); setUbicacion(""); setDescripcion("");
+
+    const { error } = await supabase.from("areas").insert([nuevaArea]);
+    if (error) {
+      console.error(error);
+      return alert("Error al guardar el área.");
+    }
+
+    fetchAreas();
+    setNombre("");
+    setResponsable("");
+    setCorreo("");
+    setTelefono("");
+    setUbicacion("");
+    setDescripcion("");
   };
 
   const abrirModalEdicion = (area) => {
-    setEditArea(area.id);
-    setEditData({ ...area });
+    setEditAreaId(area.id_area);
+    setEditData({
+      nombre: area.nombre,
+      responsable: area.responsable,
+      correo: area.correo,
+      telefono: area.telefono,
+      ubicacion: area.ubicacion,
+      descripcion: area.descripcion,
+    });
   };
 
-  const guardarEdicion = () => {
-    setAreas((prev) => prev.map((a) => (a.id === editArea ? { ...editData, id: a.id } : a)));
-    setEditArea(null);
+  const guardarEdicion = async () => {
+    const { nombre, responsable, correo, telefono } = editData;
+
+    if (!nombre || !responsable || !correo || !telefono) {
+      alert("Todos los campos obligatorios deben ser completados.");
+      return;
+    }
+
+    if (!correoValido(correo)) {
+      alert("Correo inválido.");
+      return;
+    }
+
+    if (!telefonoValido(telefono)) {
+      alert("El teléfono debe contener solo números.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("areas")
+      .update(editData)
+      .eq("id_area", editAreaId);
+
+    if (error) {
+      console.error(error);
+      return alert("Error al guardar cambios.");
+    }
+
+    fetchAreas();
+    setEditAreaId(null);
   };
 
   const handleEditChange = (e) => {
@@ -59,13 +127,25 @@ const AreaManagement = () => {
     setEditData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const eliminarArea = (id) => {
+  const eliminarArea = async (id_area) => {
     const confirmar = window.confirm("¿Estás seguro de eliminar esta área?");
     if (!confirmar) return;
-    setAreas((prev) => prev.filter((a) => a.id !== id));
+
+    const { error } = await supabase.from("areas").delete().eq("id_area", id_area);
+    if (error) {
+      console.error(error);
+      alert("No se pudo eliminar el área.");
+    } else {
+      fetchAreas();
+    }
   };
 
-  const areasFiltradas = areas.filter((a) => a.nombre.toLowerCase().includes(filtro) || a.responsable.toLowerCase().includes(filtro));
+  const areasFiltradas = areas.filter(
+    (a) =>
+      a.nombre.toLowerCase().includes(filtro) ||
+      a.responsable.toLowerCase().includes(filtro)
+  );
+
   const totalPaginas = Math.ceil(areasFiltradas.length / itemsPorPagina);
   const inicio = (paginaActual - 1) * itemsPorPagina;
   const paginados = areasFiltradas.slice(inicio, inicio + itemsPorPagina);
@@ -86,7 +166,15 @@ const AreaManagement = () => {
       <button className="area-btn-primary" onClick={handleCrearArea}>Crear</button>
 
       <h2 className="area-heading">Áreas Registradas</h2>
-      <input className="area-input" placeholder="Buscar por nombre o responsable" value={filtro} onChange={(e) => { setFiltro(e.target.value.toLowerCase()); setPaginaActual(1); }} />
+      <input
+        className="area-input"
+        placeholder="Buscar por nombre o responsable"
+        value={filtro}
+        onChange={(e) => {
+          setFiltro(e.target.value.toLowerCase());
+          setPaginaActual(1);
+        }}
+      />
 
       <div className="area-table-wrapper">
         <table className="area-table">
@@ -103,7 +191,7 @@ const AreaManagement = () => {
           </thead>
           <tbody>
             {paginados.map((a) => (
-              <tr key={a.id}>
+              <tr key={a.id_area}>
                 <td>{a.nombre}</td>
                 <td>{a.responsable}</td>
                 <td>{a.correo}</td>
@@ -113,12 +201,18 @@ const AreaManagement = () => {
                 <td>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button className="area-btn-edit" onClick={() => abrirModalEdicion(a)}>Editar</button>
-                    <button className="area-btn-danger" onClick={() => eliminarArea(a.id)}>Eliminar</button>
+                    <button className="area-btn-danger" onClick={() => eliminarArea(a.id_area)}>Eliminar</button>
                   </div>
                 </td>
               </tr>
             ))}
-            {paginados.length === 0 && <tr><td colSpan="7" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron resultados.</td></tr>}
+            {paginados.length === 0 && (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "1rem" }}>
+                  No se encontraron resultados.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -135,23 +229,24 @@ const AreaManagement = () => {
         ))}
       </div>
 
-      {editArea && (
+      {editAreaId && (
         <div className="area-modal-overlay">
           <div className="area-modal-content">
             <h3 style={{ marginBottom: "1rem" }}>Editar Área</h3>
-            {Object.keys(editData).map((key) => (
+            {Object.entries(editData).map(([key, value]) => (
               <input
                 key={key}
                 className="area-input"
                 name={key}
-                value={editData[key]}
+                value={value}
                 onChange={handleEditChange}
                 placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                disabled={key === "id_area"}
               />
             ))}
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "1rem" }}>
               <button className="area-btn-primary" onClick={guardarEdicion}>Guardar</button>
-              <button className="area-btn-cancel" onClick={() => setEditArea(null)}>Cancelar</button>
+              <button className="area-btn-cancel" onClick={() => setEditAreaId(null)}>Cancelar</button>
             </div>
           </div>
         </div>
