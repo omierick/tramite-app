@@ -1,5 +1,5 @@
 // src/components/tramites/CrearTramiteForm.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../services/supabaseClient";
 import "../../components/tramites/CrearTramiteForm.css";
 
@@ -16,15 +16,29 @@ const CrearTramiteForm = ({
   const [error, setError] = useState("");
   const [editandoCampoIndex, setEditandoCampoIndex] = useState(null);
   const [tipoCampo, setTipoCampo] = useState("texto");
+  const [areas, setAreas] = useState([]);
+  const [areaId, setAreaId] = useState("");
+
+  useEffect(() => {
+    const fetchAreas = async () => {
+      const { data, error } = await supabase.from("areas").select("id_area, nombre");
+      if (!error) {
+        const dataMapped = data.map((a) => ({ id: a.id_area, nombre: a.nombre }));
+        setAreas(dataMapped);
+      } else {
+        console.error("Error al obtener áreas:", error.message);
+      }
+    };
+
+    fetchAreas();
+  }, []);
 
   const handleLogoUpload = async () => {
     if (!logoFile) return null;
 
     const fileExt = logoFile.name.split(".").pop();
     const fileName = `${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage
-      .from("logos-tramites")
-      .upload(fileName, logoFile);
+    const { error } = await supabase.storage.from("logos-tramites").upload(fileName, logoFile);
 
     if (error) {
       console.error("Error al subir logo:", error.message);
@@ -48,8 +62,13 @@ const CrearTramiteForm = ({
       return;
     }
 
+    if (!areaId) {
+      setError("Selecciona un área para el trámite.");
+      return;
+    }
+
     const logo = await handleLogoUpload();
-    handleCrearTramite(logo);
+    handleCrearTramite(logo, areaId);
   };
 
   const handleAddOrUpdateCampo = () => {
@@ -115,6 +134,18 @@ const CrearTramiteForm = ({
           onChange={(e) => setNombreTramite(e.target.value)}
           required
         />
+      </div>
+
+      <div className="form-group">
+        <label>Área a la que pertenece el trámite</label>
+        <select value={areaId} onChange={(e) => setAreaId(e.target.value)} required>
+          <option value="">Selecciona un área</option>
+          {areas.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.nombre}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="form-group">

@@ -32,14 +32,19 @@ export const TramitesProvider = ({ children }) => {
   const fetchTiposTramite = async () => {
     const { data, error } = await supabase
       .from("tipos_tramite")
-      .select("*")
-      .order("nombre", { ascending: true });
+      .select("*, areas:area_id (nombre)");
 
     if (error) {
-      console.error("Error cargando tipos de trámite:", error);
-    } else {
-      setTiposTramite(data || []);
+      console.error("Error al obtener tipos de trámite:", error.message);
+      return;
     }
+
+    const tiposConArea = data.map((t) => ({
+      ...t,
+      area_nombre: t.areas?.nombre || "", // <- importante para mostrar el área
+    }));
+
+    setTiposTramite(tiposConArea);
   };
 
   const buscarUsuarioPorCorreo = async (correo) => {
@@ -70,12 +75,16 @@ export const TramitesProvider = ({ children }) => {
     const { data, error } = await supabase
       .from("tipos_tramite")
       .insert(tipo)
-      .select();
+      .select("*, areas:area_id (nombre)");
 
     if (error) {
       console.error("Error creando tipo de trámite:", error);
     } else if (data && data.length > 0) {
-      setTiposTramite((prev) => [...prev, data[0]]);
+      const tipoConArea = {
+        ...data[0],
+        area_nombre: data[0].areas?.nombre || "",
+      };
+      setTiposTramite((prev) => [...prev, tipoConArea]);
     }
   };
 
@@ -122,19 +131,23 @@ export const TramitesProvider = ({ children }) => {
   };
 
   const updateTipoTramite = async (id, camposActualizados) => {
-    const { nombre, campos, logo_url } = camposActualizados;
+    const { nombre, campos, logo_url, area_id } = camposActualizados;
 
     const { data, error } = await supabase
       .from("tipos_tramite")
-      .update({ nombre, campos, logo_url })
+      .update({ nombre, campos, logo_url, area_id })
       .eq("id", id)
-      .select();
+      .select("*, areas:area_id (nombre)");
 
     if (error) {
       console.error("Error actualizando tipo de trámite:", error);
     } else if (data && data.length > 0) {
+      const actualizadoConArea = {
+        ...data[0],
+        area_nombre: data[0].areas?.nombre || "",
+      };
       setTiposTramite((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, ...data[0] } : t))
+        prev.map((t) => (t.id === id ? actualizadoConArea : t))
       );
     }
   };

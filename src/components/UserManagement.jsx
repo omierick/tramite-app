@@ -9,17 +9,49 @@ const UserManagement = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rol, setRol] = useState("revisor");
+  const [areaId, setAreaId] = useState("");
+  const [areas, setAreas] = useState([]);
   const [filtro, setFiltro] = useState("");
   const [editUser, setEditUser] = useState(null);
-  const [editData, setEditData] = useState({ nombre: "", correo: "", rol: "", password: "" });
+  const [editData, setEditData] = useState({
+    nombre: "",
+    correo: "",
+    rol: "",
+    password: "",
+    area_id: null,
+  });
 
   useEffect(() => {
     fetchUsuarios();
+    fetchAreas();
   }, [user]);
 
   const fetchUsuarios = async () => {
-    const { data, error } = await supabase.from("usuarios").select("*");
-    if (!error) setUsuarios(data);
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("*, areas:area_id (nombre)");
+
+    if (!error) {
+      const usuariosConArea = data.map((u) => ({
+        ...u,
+        area_nombre: u.areas?.nombre || "",
+      }));
+      setUsuarios(usuariosConArea);
+    }
+  };
+
+  const fetchAreas = async () => {
+    const { data, error } = await supabase
+      .from("areas")
+      .select("id_area, nombre");
+
+    if (error) {
+      console.error("Error al traer áreas", error);
+      alert("Error al traer áreas: " + error.message);
+    } else {
+      const dataMapped = data.map((a) => ({ id: a.id_area, nombre: a.nombre }));
+      setAreas(dataMapped);
+    }
   };
 
   if (!user || (user.rol !== "admin" && user.rol !== "admin_usuarios")) {
@@ -31,21 +63,26 @@ const UserManagement = () => {
     if (!/\S+@\S+\.\S+/.test(email)) return alert("Correo inválido");
     if (password.length < 6) return alert("Contraseña debe tener al menos 6 caracteres");
 
-    const { data: existente } = await supabase
-      .from("usuarios")
-      .select("correo")
-      .eq("correo", email)
-      .single();
-
+    const { data: existente } = await supabase.from("usuarios").select("correo").eq("correo", email).single();
     if (existente) return alert("Correo ya registrado.");
 
-    const { error } = await supabase
-      .from("usuarios")
-      .insert([{ nombre, correo: email, password, rol }]);
+    const nuevoUsuario = {
+      nombre,
+      correo: email,
+      password,
+      rol,
+      ...(rol === "revisor" && areaId ? { area_id: parseInt(areaId) } : {}),
+    };
+
+    const { error } = await supabase.from("usuarios").insert([nuevoUsuario]);
 
     if (!error) {
       alert("Usuario creado");
-      setNombre(""); setEmail(""); setPassword(""); setRol("revisor");
+      setNombre("");
+      setEmail("");
+      setPassword("");
+      setRol("revisor");
+      setAreaId("");
       fetchUsuarios();
     } else {
       alert("Error al crear: " + error.message);
@@ -54,7 +91,10 @@ const UserManagement = () => {
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditData((prev) => ({ ...prev, [name]: value }));
+    setEditData((prev) => ({
+      ...prev,
+      [name]: name === "area_id" ? parseInt(value) : value,
+    }));
   };
 
   const openEditModal = (usuario) => {
@@ -63,25 +103,26 @@ const UserManagement = () => {
       nombre: usuario.nombre,
       correo: usuario.correo,
       rol: usuario.rol,
-      password: ""
+      password: "",
+      area_id: usuario.area_id || null,
     });
   };
 
   const handleUpdate = async () => {
-    const { nombre, correo, rol, password } = editData;
+    const { nombre, correo, rol, password, area_id } = editData;
     if (!nombre || !correo || !rol) return alert("Faltan datos");
     if (!/\S+@\S+\.\S+/.test(correo)) return alert("Correo inválido");
 
     const updateFields = { nombre, correo, rol };
+    if (rol === "revisor" && area_id) updateFields.area_id = parseInt(area_id);
+    else updateFields.area_id = null;
+
     if (password?.trim()) {
       if (password.length < 6) return alert("La contraseña debe tener al menos 6 caracteres");
       updateFields.password = password;
     }
 
-    const { error } = await supabase
-      .from("usuarios")
-      .update(updateFields)
-      .eq("correo", editUser);
+    const { error } = await supabase.from("usuarios").update(updateFields).eq("correo", editUser);
 
     if (!error) {
       alert("Usuario actualizado");
@@ -106,9 +147,7 @@ const UserManagement = () => {
   };
 
   const usuariosFiltrados = usuarios.filter(
-    (u) =>
-      u.nombre.toLowerCase().includes(filtro) ||
-      u.correo.toLowerCase().includes(filtro)
+    (u) => u.nombre.toLowerCase().includes(filtro) || u.correo.toLowerCase().includes(filtro)
   );
 
   return (
@@ -125,6 +164,14 @@ const UserManagement = () => {
         <option value="admin_charts">admin_charts</option>
         <option value="usuario">usuario</option>
       </select>
+      {rol === "revisor" && (
+        <select value={areaId} onChange={(e) => setAreaId(e.target.value)} style={inputStyle}>
+          <option value="">Selecciona un área</option>
+          {areas.map((area) => (
+            <option key={area.id} value={area.id}>{area.nombre}</option>
+          ))}
+        </select>
+      )}
       <button onClick={handleCreate} style={btnPrimary}>Crear</button>
 
       <h2 style={heading}>Usuarios Registrados</h2>
@@ -142,6 +189,7 @@ const UserManagement = () => {
               <th style={cellStyle}>Nombre</th>
               <th style={cellStyle}>Correo</th>
               <th style={cellStyle}>Rol</th>
+              <th style={cellStyle}>Área</th>
               <th style={cellStyle}>Acciones</th>
             </tr>
           </thead>
@@ -151,6 +199,7 @@ const UserManagement = () => {
                 <td style={cellStyle}>{u.nombre}</td>
                 <td style={cellStyle}>{u.correo}</td>
                 <td style={cellStyle}>{u.rol}</td>
+                <td style={cellStyle}>{u.area_nombre}</td>
                 <td style={cellStyle}>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button onClick={() => openEditModal(u)} style={btnEdit}>Editar</button>
@@ -178,6 +227,14 @@ const UserManagement = () => {
               <option value="admin_charts">admin_charts</option>
               <option value="usuario">usuario</option>
             </select>
+            {editData.rol === "revisor" && (
+              <select name="area_id" value={editData.area_id || ""} onChange={handleEditChange} style={inputStyle}>
+                <option value="">Selecciona un área</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>{area.nombre}</option>
+                ))}
+              </select>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "1rem" }}>
               <button onClick={handleUpdate} style={btnPrimary}>Guardar</button>
               <button onClick={() => setEditUser(null)} style={btnCancel}>Cancelar</button>
@@ -189,7 +246,6 @@ const UserManagement = () => {
   );
 };
 
-// Estilos
 const container = {
   maxWidth: "700px",
   margin: "2rem auto",
@@ -199,85 +255,14 @@ const container = {
   boxShadow: "0 0 10px rgba(0,0,0,0.1)",
 };
 
-const heading = {
-  marginTop: "1rem",
-  marginBottom: "1rem",
-  color: "#111827"
-};
-
-const inputStyle = {
-  width: "100%",
-  marginBottom: "0.5rem",
-  padding: "0.6rem",
-  borderRadius: "6px",
-  border: "1px solid #d1d5db",
-};
-
-const btnPrimary = {
-  background: "#2563eb",
-  color: "#fff",
-  border: "none",
-  padding: "0.6rem",
-  width: "100%",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
-const btnDanger = {
-  background: "#ef4444",
-  color: "#fff",
-  border: "none",
-  padding: "0.4rem 0.8rem",
-  borderRadius: "5px",
-  cursor: "pointer",
-  fontWeight: "bold",
-};
-
-const btnCancel = {
-  background: "#9ca3af",
-  color: "#fff",
-  border: "none",
-  padding: "0.6rem",
-  width: "100%",
-  borderRadius: "6px",
-  cursor: "pointer",
-};
-
-const btnEdit = {
-  background: "#10b981",
-  color: "#fff",
-  border: "none",
-  padding: "0.4rem 0.8rem",
-  borderRadius: "5px",
-  cursor: "pointer",
-  fontWeight: "bold",
-};
-
-const cellStyle = {
-  border: "1px solid #e5e7eb",
-  padding: "8px",
-};
-
-const modalOverlay = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100vw",
-  height: "100vh",
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
-};
-
-const modalContent = {
-  background: "#fff",
-  padding: "2rem",
-  borderRadius: "10px",
-  width: "90%",
-  maxWidth: "400px",
-  boxShadow: "0 0 15px rgba(0,0,0,0.2)",
-};
+const heading = { marginTop: "1rem", marginBottom: "1rem", color: "#111827" };
+const inputStyle = { width: "100%", marginBottom: "0.5rem", padding: "0.6rem", borderRadius: "6px", border: "1px solid #d1d5db" };
+const btnPrimary = { background: "#2563eb", color: "#fff", border: "none", padding: "0.6rem", width: "100%", borderRadius: "6px", cursor: "pointer" };
+const btnDanger = { background: "#ef4444", color: "#fff", border: "none", padding: "0.4rem 0.8rem", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" };
+const btnCancel = { background: "#9ca3af", color: "#fff", border: "none", padding: "0.6rem", width: "100%", borderRadius: "6px", cursor: "pointer" };
+const btnEdit = { background: "#10b981", color: "#fff", border: "none", padding: "0.4rem 0.8rem", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" };
+const cellStyle = { border: "1px solid #e5e7eb", padding: "8px" };
+const modalOverlay = { position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 };
+const modalContent = { background: "#fff", padding: "2rem", borderRadius: "10px", width: "90%", maxWidth: "400px", boxShadow: "0 0 15px rgba(0,0,0,0.2)" };
 
 export default UserManagement;

@@ -6,12 +6,14 @@ import "./EditTipoModal.css";
 
 const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
   const [nombre, setNombre] = useState("");
+  const [campos, setCampos] = useState([]);
   const [nuevoCampoNombre, setNuevoCampoNombre] = useState("");
   const [nuevoCampoTipo, setNuevoCampoTipo] = useState("texto");
-  const [campos, setCampos] = useState([]);
   const [editandoIndex, setEditandoIndex] = useState(null);
   const [logo, setLogo] = useState(null);
   const [previewLogo, setPreviewLogo] = useState(null);
+  const [areas, setAreas] = useState([]);
+  const [areaId, setAreaId] = useState(null);
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -22,18 +24,27 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
       setPreviewLogo(
         typeof tipo.logo === "string" ? tipo.logo : tipo.logo_url || null
       );
-      setEditandoIndex(null);
+      setAreaId(tipo.area_id || "");
       setNuevoCampoNombre("");
       setNuevoCampoTipo("texto");
     }
   }, [tipo]);
 
   useEffect(() => {
+    const fetchAreas = async () => {
+      const { data, error } = await supabase.from("areas").select("id_area, nombre");
+      if (!error) {
+        const mapped = data.map((a) => ({ id: a.id_area, nombre: a.nombre }));
+        setAreas(mapped);
+      }
+    };
+    fetchAreas();
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
-        const confirmExit = window.confirm(
-          "¿Deseas salir sin guardar los cambios?"
-        );
+        const confirmExit = window.confirm("¿Deseas salir sin guardar los cambios?");
         if (confirmExit) {
           onClose();
         }
@@ -50,8 +61,6 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   const agregarOActualizarCampo = () => {
     if (!nuevoCampoNombre.trim()) return;
@@ -111,8 +120,15 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
   };
 
   const guardar = () => {
-    onSave(tipo.id, { nombre, campos, logo_url: logo || previewLogo });
+    onSave(tipo.id, {
+      nombre,
+      campos,
+      logo_url: logo || previewLogo,
+      area_id: areaId ? parseInt(areaId) : null,
+    });
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
@@ -127,6 +143,18 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Nombre del trámite"
           />
+        </div>
+
+        <div className="form-group">
+          <label>Área del trámite:</label>
+          <select value={areaId || ""} onChange={(e) => setAreaId(e.target.value)}>
+            <option value="">-- Selecciona un área --</option>
+            {areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.nombre}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

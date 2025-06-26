@@ -1,7 +1,7 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import EditTipoModal from "./EditTipoModal"; // Está en la misma carpeta
-import "./EditTipoModal.css"; // Asegúrate de tener este CSS en la misma carpeta
+import EditTipoModal from "./EditTipoModal";
+import "./EditTipoModal.css";
 
 const TiposTramiteGrid = ({
   tiposTramite,
@@ -21,9 +21,8 @@ const TiposTramiteGrid = ({
     setModalAbierto(false);
   };
 
-  // ✅ Ahora acepta nombre y campos
   const guardarCambios = (id, datosActualizados) => {
-    updateTipoTramite(id, datosActualizados); // { nombre, campos }
+    updateTipoTramite(id, datosActualizados);
     cerrarModal();
   };
 
@@ -32,6 +31,13 @@ const TiposTramiteGrid = ({
       {tiposTramite.map((tipo) => (
         <div key={tipo.id} className="tramite-card">
           <h3>{tipo.nombre}</h3>
+
+          {tipo.area_nombre && (
+            <p style={{ marginTop: "0.3rem", fontStyle: "italic", color: "#666" }}>
+              Área: {tipo.area_nombre}
+            </p>
+          )}
+
           <p>
             <strong>Campos:</strong>
           </p>
@@ -69,7 +75,7 @@ const TiposTramiteGrid = ({
           tipo={tipoEditando}
           isOpen={modalAbierto}
           onClose={cerrarModal}
-          onSave={guardarCambios} // ✅ guarda nombre y campos
+          onSave={guardarCambios}
         />
       )}
     </div>
