@@ -3,7 +3,11 @@ import PropTypes from "prop-types";
 import EditTipoModal from "./EditTipoModal"; // Está en la misma carpeta
 import "./EditTipoModal.css"; // Asegúrate de tener este CSS en la misma carpeta
 
-const TiposTramiteGrid = ({ tiposTramite, updateTipoTramite, deleteTipoTramite }) => {
+const TiposTramiteGrid = ({
+  tiposTramite,
+  updateTipoTramite,
+  deleteTipoTramite,
+}) => {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [tipoEditando, setTipoEditando] = useState(null);
 
@@ -28,10 +32,15 @@ const TiposTramiteGrid = ({ tiposTramite, updateTipoTramite, deleteTipoTramite }
       {tiposTramite.map((tipo) => (
         <div key={tipo.id} className="tramite-card">
           <h3>{tipo.nombre}</h3>
-          <p><strong>Campos:</strong></p>
+          <p>
+            <strong>Campos:</strong>
+          </p>
           <ul>
             {tipo.campos.map((campo, idx) => (
-              <li key={idx}>{campo}</li>
+              <li key={idx}>
+                {campo.nombre}{" "}
+                <span style={{ color: "#555" }}>({campo.tipo})</span>
+              </li>
             ))}
           </ul>
 
@@ -42,7 +51,9 @@ const TiposTramiteGrid = ({ tiposTramite, updateTipoTramite, deleteTipoTramite }
             <button
               className="btn-eliminar"
               onClick={() => {
-                if (confirm("¿Seguro que deseas eliminar este tipo de trámite?")) {
+                if (
+                  confirm("¿Seguro que deseas eliminar este tipo de trámite?")
+                ) {
                   deleteTipoTramite(tipo.id);
                 }
               }}

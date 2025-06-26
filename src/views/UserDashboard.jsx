@@ -19,13 +19,11 @@ const schema = yup.object().shape({
 const formatFechaManual = (isoString) => {
   const date = new Date(isoString);
   const mxDate = new Date(date.toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-
   const dia = String(mxDate.getDate()).padStart(2, "0");
   const mes = String(mxDate.getMonth() + 1).padStart(2, "0");
   const anio = mxDate.getFullYear();
   const horas = String(mxDate.getHours()).padStart(2, "0");
   const minutos = String(mxDate.getMinutes()).padStart(2, "0");
-
   return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
 };
 
@@ -52,10 +50,17 @@ const UserDashboard = ({ setRole }) => {
   const handleSelectSubmit = (e) => {
     e.preventDefault();
     const tipo = tiposTramite.find((tipo) => tipo.id.toString() === tramiteSeleccionadoId);
+    console.log("📦 Tipo seleccionado:", tipo);
     if (tipo) {
       setSelectedTipo(tipo);
       const initialData = {};
-      tipo.campos.forEach((campo) => (initialData[campo] = ""));
+      tipo.campos.forEach((campo) => {
+        if (typeof campo.nombre === "string") {
+          initialData[campo.nombre] = campo.tipo === "booleano" ? false : "";
+        } else {
+          console.warn("Campo con nombre inválido:", campo);
+        }
+      });
       setFormData(initialData);
     } else {
       toast.error("Selecciona un trámite válido");
@@ -150,12 +155,31 @@ const UserDashboard = ({ setRole }) => {
           <form className="tramite-form" onSubmit={handleSubmit(onSubmit)}>
             <h3>{editandoTramite ? "Editar Trámite Rechazado" : `Nuevo Trámite: ${selectedTipo.nombre}`}</h3>
 
-            {selectedTipo.campos.map((campo, idx) => (
-              <div key={idx} className="form-group">
-                <label>{campo}:</label>
-                <input type="text" value={formData[campo] || ""} onChange={(e) => handleChange(e, campo)} required />
-              </div>
-            ))}
+            {selectedTipo.campos.map((campo, idx) => {
+              const nombreCampo = campo.nombre;
+              const tipoCampo = campo.tipo;
+
+              if (typeof nombreCampo !== "string" || typeof tipoCampo !== "string") {
+                console.error("Campo inválido:", campo);
+                return (
+                  <div key={idx} className="form-group">
+                    <p style={{ color: "red" }}>⚠️ Error: Campo inválido</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={idx} className="form-group">
+                  <label>{nombreCampo}:</label>
+                  <input
+                    type="text"
+                    value={formData[nombreCampo] || ""}
+                    onChange={(e) => handleChange(e, nombreCampo)}
+                    required
+                  />
+                </div>
+              );
+            })}
 
             <div className="form-group">
               <label>Correo electrónico para actualizaciones:</label>
@@ -192,89 +216,88 @@ const UserDashboard = ({ setRole }) => {
         )}
 
         {tramitesUsuario.length > 0 && (
-  <div className="mis-tramites">
-    <h3>Mis Trámites Enviados</h3>
+          <div className="mis-tramites">
+            <h3>Mis Trámites Enviados</h3>
 
-    <div className="filtros-container">
-      <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-        <option value="todos">Todos</option>
-        <option value="Pendiente">Pendiente</option>
-        <option value="Aprobado">Aprobado</option>
-        <option value="Rechazado">Rechazado</option>
-      </select>
-      <input
-        type="text"
-        placeholder="Buscar por tipo o folio..."
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-      />
-      <select value={orden} onChange={(e) => setOrden(e.target.value)}>
-        <option value="recientes">Más recientes</option>
-        <option value="antiguos">Más antiguos</option>
-        <option value="tipo">Ordenar por tipo</option>
-      </select>
-    </div>
+            <div className="filtros-container">
+              <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+                <option value="todos">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Buscar por tipo o folio..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+              />
+              <select value={orden} onChange={(e) => setOrden(e.target.value)}>
+                <option value="recientes">Más recientes</option>
+                <option value="antiguos">Más antiguos</option>
+                <option value="tipo">Ordenar por tipo</option>
+              </select>
+            </div>
 
-    <table className="tabla-tramites">
-      <thead>
-        <tr>
-          <th>Folio</th>
-          <th>Tipo</th>
-          <th>Estado</th>
-          <th>Fecha de Solicitud</th>
-          <th>Fecha de Revisión</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tramitesFiltrados.length === 0 ? (
-          <tr>
-            <td colSpan="6" style={{ textAlign: "center", padding: "1rem", color: "#777" }}>
-              No se encontraron coincidencias.
-            </td>
-          </tr>
-        ) : (
-          tramitesFiltrados.map((tramite) => (
-            <tr key={tramite.id}>
-              <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-                {tramite.folio || "Sin folio"}
-              </td>
-              <td>{tramite.tipo}</td>
-              <td className={`estado ${tramite.estado.toLowerCase()}`}>
-                <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
-                {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
-                  <div style={{ fontSize: "0.8rem", color: "#c00", marginTop: "4px" }}>
-                    <i className="fas fa-info-circle" style={{ marginRight: "4px" }}></i>
-                    <strong>Motivo:</strong> {tramite.comentario_revisor}
-                  </div>
+            <table className="tabla-tramites">
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Fecha de Solicitud</th>
+                  <th>Fecha de Revisión</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tramitesFiltrados.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: "center", padding: "1rem", color: "#777" }}>
+                      No se encontraron coincidencias.
+                    </td>
+                  </tr>
+                ) : (
+                  tramitesFiltrados.map((tramite) => (
+                    <tr key={tramite.id}>
+                      <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+                        {tramite.folio || "Sin folio"}
+                      </td>
+                      <td>{tramite.tipo}</td>
+                      <td className={`estado ${tramite.estado.toLowerCase()}`}>
+                        <span style={{ fontWeight: "bold" }}>{tramite.estado}</span>
+                        {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
+                          <div style={{ fontSize: "0.8rem", color: "#c00", marginTop: "4px" }}>
+                            <i className="fas fa-info-circle" style={{ marginRight: "4px" }}></i>
+                            <strong>Motivo:</strong> {tramite.comentario_revisor}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ fontSize: "0.85rem", color: "#444" }}>
+                        {tramite.createdAt ? formatFechaManual(tramite.createdAt) : "Desconocida"}
+                      </td>
+                      <td style={{ fontSize: "0.85rem", color: tramite.reviewedAt ? "#444" : "#888" }}>
+                        {tramite.reviewedAt ? formatFechaManual(tramite.reviewedAt) : "Sin revisión"}
+                      </td>
+                      <td>
+                        {tramite.estado === "Rechazado" && (
+                          <button className="btn-secondary" onClick={() => handleEditarTramite(tramite)}>
+                            Editar
+                          </button>
+                        )}
+                        {tramite.estado === "Aprobado" && (
+                          <button className="btn-secondary" onClick={() => handleDescargarTramite(tramite)}>
+                            Descargar
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
-              </td>
-              <td style={{ fontSize: "0.85rem", color: "#444" }}>
-                {tramite.createdAt ? formatFechaManual(tramite.createdAt) : "Desconocida"}
-              </td>
-              <td style={{ fontSize: "0.85rem", color: tramite.reviewedAt ? "#444" : "#888" }}>
-                {tramite.reviewedAt ? formatFechaManual(tramite.reviewedAt) : "Sin revisión"}
-              </td>
-              <td>
-                {tramite.estado === "Rechazado" && (
-                  <button className="btn-secondary" onClick={() => handleEditarTramite(tramite)}>
-                    Editar
-                  </button>
-                )}
-                {tramite.estado === "Aprobado" && (
-                  <button className="btn-secondary" onClick={() => handleDescargarTramite(tramite)}>
-                    Descargar
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))
+              </tbody>
+            </table>
+          </div>
         )}
-      </tbody>
-    </table>
-  </div>
-)}
-
       </div>
     </>
   );

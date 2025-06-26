@@ -1,10 +1,7 @@
 import { supabase } from "./supabaseClient";
 
-const templates = [
-  "Licencia de Construcción",
-  "Permiso de Comercio",
-  "Certificado de Habitabilidad",
-];
+// Elimina el array templates, ya no se usará
+// const templates = [ ... ];
 
 export async function addTramite(data) {
   const { data: inserted, error } = await supabase
@@ -33,10 +30,16 @@ export async function updateTramite(id, status) {
   return data;
 }
 
-export function getTemplates() {
-  return templates;
+// ✅ Esta función ahora consulta la tabla "tipos_tramite"
+export async function getTemplates() {
+  const { data, error } = await supabase
+    .from("tipos_tramite")
+    .select("*");
+  if (error) throw error;
+  return data;
 }
 
-export function addTemplate(template) {
-  templates.push(template);
-}
+// Puedes eliminar esta función si ya no necesitas manipular un array local
+// export function addTemplate(template) {
+//   templates.push(template);
+// }

@@ -6,7 +6,8 @@ import "./EditTipoModal.css";
 
 const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
   const [nombre, setNombre] = useState("");
-  const [nuevoCampo, setNuevoCampo] = useState("");
+  const [nuevoCampoNombre, setNuevoCampoNombre] = useState("");
+  const [nuevoCampoTipo, setNuevoCampoTipo] = useState("texto");
   const [campos, setCampos] = useState([]);
   const [editandoIndex, setEditandoIndex] = useState(null);
   const [logo, setLogo] = useState(null);
@@ -18,16 +19,21 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
       setNombre(tipo.nombre || "");
       setCampos(tipo.campos || []);
       setLogo(null);
-      setPreviewLogo(typeof tipo.logo === "string" ? tipo.logo : tipo.logo_url || null);
+      setPreviewLogo(
+        typeof tipo.logo === "string" ? tipo.logo : tipo.logo_url || null
+      );
       setEditandoIndex(null);
-      setNuevoCampo("");
+      setNuevoCampoNombre("");
+      setNuevoCampoTipo("texto");
     }
   }, [tipo]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
-        const confirmExit = window.confirm("¿Deseas salir sin guardar los cambios?");
+        const confirmExit = window.confirm(
+          "¿Deseas salir sin guardar los cambios?"
+        );
         if (confirmExit) {
           onClose();
         }
@@ -48,8 +54,9 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   const agregarOActualizarCampo = () => {
-    const campo = nuevoCampo.trim();
-    if (!campo) return;
+    if (!nuevoCampoNombre.trim()) return;
+
+    const campo = { nombre: nuevoCampoNombre.trim(), tipo: nuevoCampoTipo };
 
     if (editandoIndex !== null) {
       const actualizados = [...campos];
@@ -57,15 +64,18 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
       setCampos(actualizados);
       setEditandoIndex(null);
     } else {
-      if (!campos.includes(campo)) {
+      if (!campos.find((c) => c.nombre === campo.nombre)) {
         setCampos([...campos, campo]);
       }
     }
-    setNuevoCampo("");
+
+    setNuevoCampoNombre("");
+    setNuevoCampoTipo("texto");
   };
 
   const editarCampo = (index) => {
-    setNuevoCampo(campos[index]);
+    setNuevoCampoNombre(campos[index].nombre);
+    setNuevoCampoTipo(campos[index].tipo);
     setEditandoIndex(index);
   };
 
@@ -74,7 +84,8 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
     setCampos(actualizados);
     if (editandoIndex === index) {
       setEditandoIndex(null);
-      setNuevoCampo("");
+      setNuevoCampoNombre("");
+      setNuevoCampoTipo("texto");
     }
   };
 
@@ -83,12 +94,16 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
     if (file) {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
-      const { error } = await supabase.storage.from("logos-tramites").upload(fileName, file);
+      const { error } = await supabase.storage
+        .from("logos-tramites")
+        .upload(fileName, file);
       if (error) {
         console.error("Error al subir el logo:", error.message);
         return;
       }
-      const { data: publicUrlData } = supabase.storage.from("logos-tramites").getPublicUrl(fileName);
+      const { data: publicUrlData } = supabase.storage
+        .from("logos-tramites")
+        .getPublicUrl(fileName);
       const url = publicUrlData.publicUrl;
       setLogo(url);
       setPreviewLogo(url);
@@ -96,7 +111,7 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
   };
 
   const guardar = () => {
-    onSave(tipo.id, { nombre, campos, logo: logo || previewLogo });
+    onSave(tipo.id, { nombre, campos, logo_url: logo || previewLogo });
   };
 
   return (
@@ -129,11 +144,26 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
           <div className="campo-add">
             <input
               type="text"
-              value={nuevoCampo}
-              onChange={(e) => setNuevoCampo(e.target.value)}
+              value={nuevoCampoNombre}
+              onChange={(e) => setNuevoCampoNombre(e.target.value)}
               placeholder="Nombre del campo"
             />
-            <button className="btn btn-primary" type="button" onClick={agregarOActualizarCampo}>
+            <select
+              value={nuevoCampoTipo}
+              onChange={(e) => setNuevoCampoTipo(e.target.value)}
+            >
+              <option value="texto">Texto</option>
+              <option value="numero">Número</option>
+              <option value="booleano">Booleano</option>
+              <option value="fecha">Fecha</option>
+              <option value="archivo">Archivo</option>
+              <option value="coordenadas">Ubicación (Coordenadas)</option>
+            </select>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={agregarOActualizarCampo}
+            >
               {editandoIndex !== null ? "Actualizar" : "Añadir"}
             </button>
           </div>
@@ -141,10 +171,22 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
           <ul className="campos-lista">
             {campos.map((campo, index) => (
               <li key={index}>
-                <span>{campo}</span>
+                <span>
+                  {campo.nombre} <em>({campo.tipo})</em>
+                </span>
                 <div className="campo-buttons">
-                  <button className="btn btn-edit" onClick={() => editarCampo(index)}>Editar</button>
-                  <button className="btn btn-danger" onClick={() => eliminarCampo(index)}>Eliminar</button>
+                  <button
+                    className="btn btn-edit"
+                    onClick={() => editarCampo(index)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => eliminarCampo(index)}
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </li>
             ))}

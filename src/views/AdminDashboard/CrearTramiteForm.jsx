@@ -1,8 +1,7 @@
 // src/components/tramites/CrearTramiteForm.jsx
 import { useState } from "react";
 import { supabase } from "../../services/supabaseClient";
-import "../../components/tramites/CrearTramiteForm.css"; // ✅
-
+import "../../components/tramites/CrearTramiteForm.css";
 
 const CrearTramiteForm = ({
   nombreTramite,
@@ -16,6 +15,7 @@ const CrearTramiteForm = ({
   const [logoFile, setLogoFile] = useState(null);
   const [error, setError] = useState("");
   const [editandoCampoIndex, setEditandoCampoIndex] = useState(null);
+  const [tipoCampo, setTipoCampo] = useState("texto");
 
   const handleLogoUpload = async () => {
     if (!logoFile) return null;
@@ -59,18 +59,19 @@ const CrearTramiteForm = ({
       return;
     }
 
-    const camposNormalizados = campos.map((c) => c.toLowerCase());
-    const duplicado = camposNormalizados.includes(nuevoCampo.toLowerCase());
+    const campoObjeto = { nombre: nuevoCampo, tipo: tipoCampo };
+    const duplicado = campos.some((c) => c.nombre.toLowerCase() === nuevoCampo.toLowerCase());
 
     if (editandoCampoIndex !== null) {
-      const actual = campos[editandoCampoIndex];
-      if (nuevoCampo.toLowerCase() !== actual.toLowerCase() && duplicado) {
+      if (
+        nuevoCampo.toLowerCase() !== campos[editandoCampoIndex].nombre.toLowerCase() &&
+        duplicado
+      ) {
         setError("Ese campo ya existe.");
         return;
       }
-
       const nuevos = [...campos];
-      nuevos[editandoCampoIndex] = nuevoCampo;
+      nuevos[editandoCampoIndex] = campoObjeto;
       setCampos(nuevos);
       setEditandoCampoIndex(null);
     } else {
@@ -78,15 +79,17 @@ const CrearTramiteForm = ({
         setError("Ese campo ya existe.");
         return;
       }
-      setCampos([...campos, nuevoCampo]);
+      setCampos([...campos, campoObjeto]);
     }
 
     setCampoNuevo("");
+    setTipoCampo("texto");
     setError("");
   };
 
   const handleEditarCampo = (index) => {
-    setCampoNuevo(campos[index]);
+    setCampoNuevo(campos[index].nombre);
+    setTipoCampo(campos[index].tipo);
     setEditandoCampoIndex(index);
   };
 
@@ -95,6 +98,7 @@ const CrearTramiteForm = ({
     setCampos(nuevos);
     if (editandoCampoIndex === index) {
       setCampoNuevo("");
+      setTipoCampo("texto");
       setEditandoCampoIndex(null);
     }
   };
@@ -120,12 +124,17 @@ const CrearTramiteForm = ({
             type="text"
             value={campoNuevo}
             onChange={(e) => setCampoNuevo(e.target.value)}
+            placeholder="Nombre del campo"
           />
-          <button
-            type="button"
-            onClick={handleAddOrUpdateCampo}
-            className="btn btn-primary"
-          >
+          <select value={tipoCampo} onChange={(e) => setTipoCampo(e.target.value)}>
+            <option value="texto">Texto</option>
+            <option value="número">Número</option>
+            <option value="booleano">Booleano</option>
+            <option value="archivo">Archivo</option>
+            <option value="fecha">Fecha</option>
+            <option value="coordenadas">Coordenadas</option>
+          </select>
+          <button type="button" onClick={handleAddOrUpdateCampo} className="btn btn-primary">
             {editandoCampoIndex !== null ? "Actualizar" : "Añadir"}
           </button>
         </div>
@@ -136,13 +145,15 @@ const CrearTramiteForm = ({
             <thead>
               <tr>
                 <th>Campo</th>
+                <th>Tipo</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {campos.map((campo, index) => (
                 <tr key={index}>
-                  <td>{campo}</td>
+                  <td>{campo.nombre}</td>
+                  <td>{campo.tipo}</td>
                   <td>
                     <button
                       type="button"

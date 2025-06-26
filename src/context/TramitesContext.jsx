@@ -79,32 +79,31 @@ export const TramitesProvider = ({ children }) => {
     }
   };
 
-  
   const updateTramiteEstado = async (id, nuevoEstado, comentario = "") => {
-  const camposActualizados = {
-    estado: nuevoEstado,
-    reviewedAt: new Date().toISOString(),
+    const camposActualizados = {
+      estado: nuevoEstado,
+      reviewedAt: new Date().toISOString(),
+    };
+
+    // Guarda comentario si existe
+    if (comentario) {
+      camposActualizados.comentario_revisor = comentario;
+    }
+
+    const { data, error } = await supabase
+      .from("tramites")
+      .update(camposActualizados)
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Error actualizando estado del trámite:", error);
+    } else if (data && data.length > 0) {
+      setTramites((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, ...data[0] } : t))
+      );
+    }
   };
-
-  // Guarda comentario si existe
-  if (comentario) {
-    camposActualizados.comentario_revisor = comentario;
-  }
-
-  const { data, error } = await supabase
-    .from("tramites")
-    .update(camposActualizados)
-    .eq("id", id)
-    .select();
-
-  if (error) {
-    console.error("Error actualizando estado del trámite:", error);
-  } else if (data && data.length > 0) {
-    setTramites((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...data[0] } : t))
-    );
-  }
-};
 
   const updateTramiteCampos = async (id, nuevosDatos) => {
     const { data, error } = await supabase
@@ -123,9 +122,11 @@ export const TramitesProvider = ({ children }) => {
   };
 
   const updateTipoTramite = async (id, camposActualizados) => {
+    const { nombre, campos, logo_url } = camposActualizados;
+
     const { data, error } = await supabase
       .from("tipos_tramite")
-      .update(camposActualizados)
+      .update({ nombre, campos, logo_url })
       .eq("id", id)
       .select();
 
@@ -139,7 +140,10 @@ export const TramitesProvider = ({ children }) => {
   };
 
   const deleteTipoTramite = async (id) => {
-    const { error } = await supabase.from("tipos_tramite").delete().eq("id", id);
+    const { error } = await supabase
+      .from("tipos_tramite")
+      .delete()
+      .eq("id", id);
     if (error) {
       console.error("Error eliminando tipo de trámite:", error);
     } else {
