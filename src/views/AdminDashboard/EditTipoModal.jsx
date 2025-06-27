@@ -1,4 +1,3 @@
-// src/views/AdminDashboard/EditTipoModal.jsx
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { supabase } from "../../services/supabaseClient";
@@ -78,8 +77,7 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
       }
     }
 
-    setNuevoCampoNombre("");
-    setNuevoCampoTipo("texto");
+    setNuevoCampoNombre(""); // Conservamos el tipo para facilitar repetición
   };
 
   const editarCampo = (index) => {
@@ -94,7 +92,6 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
     if (editandoIndex === index) {
       setEditandoIndex(null);
       setNuevoCampoNombre("");
-      setNuevoCampoTipo("texto");
     }
   };
 
@@ -167,8 +164,10 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
           )}
         </div>
 
-        <div className="form-group campos-scroll">
+        <div className="form-group">
           <label>Campos del trámite:</label>
+
+          {/* Edición de campo */}
           <div className="campo-add">
             <input
               type="text"
@@ -196,29 +195,32 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
             </button>
           </div>
 
-          <ul className="campos-lista">
-            {campos.map((campo, index) => (
-              <li key={index}>
-                <span>
-                  {campo.nombre} <em>({campo.tipo})</em>
-                </span>
-                <div className="campo-buttons">
-                  <button
-                    className="btn btn-edit"
-                    onClick={() => editarCampo(index)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => eliminarCampo(index)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {/* Lista con scroll */}
+          <div className="campos-scroll">
+            <ul className="campos-lista">
+              {campos.map((campo, index) => (
+                <li key={index}>
+                  <span>
+                    {campo.nombre} <em>({campo.tipo})</em>
+                  </span>
+                  <div className="campo-buttons">
+                    <button
+                      className="btn btn-edit"
+                      onClick={() => editarCampo(index)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => eliminarCampo(index)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="modal-actions">

@@ -77,6 +77,12 @@
 
 .area-table thead {
   background-color: #f9fafb;
+  cursor: pointer;
+}
+
+.area-table th svg {
+  margin-left: 0.25rem;
+  vertical-align: middle;
 }
 
 .area-modal-overlay {
@@ -101,6 +107,18 @@
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
+.area-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.area-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .area-pagination {
   display: flex;
   justify-content: center;
@@ -110,7 +128,7 @@
   flex-wrap: wrap;
 }
 
-.area-page-button {
+.area-page-btn {
   padding: 0.4rem 0.8rem;
   border: 1px solid #d1d5db;
   background: #fff;
@@ -120,13 +138,13 @@
   color: #374151;
 }
 
-.area-page-button.active {
+.area-page-btn.active {
   background: #2563eb;
   color: #fff;
   border-color: #2563eb;
 }
 
-.area-page-button:disabled {
+.area-page-btn:disabled {
   background: #e5e7eb;
   color: #9ca3af;
   cursor: not-allowed;

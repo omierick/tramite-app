@@ -1,27 +1,22 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
+import { FaSort, FaSortUp, FaSortDown, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import "./AreaManagement.css";
 
 const AreaManagement = () => {
   const [areas, setAreas] = useState([]);
   const [filtro, setFiltro] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
+  const [orden, setOrden] = useState({ columna: "id_area", asc: true });
   const itemsPorPagina = 10;
 
   const [nombre, setNombre] = useState("");
-  const [responsable, setResponsable] = useState("");
-  const [correo, setCorreo] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [ubicacion, setUbicacion] = useState("");
   const [descripcion, setDescripcion] = useState("");
 
   const [editAreaId, setEditAreaId] = useState(null);
   const [editData, setEditData] = useState({
+    id_area: "",
     nombre: "",
-    responsable: "",
-    correo: "",
-    telefono: "",
-    ubicacion: "",
     descripcion: "",
   });
 
@@ -35,33 +30,13 @@ const AreaManagement = () => {
     else console.error("Error al cargar áreas:", error);
   };
 
-  const correoValido = (valor) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
-  const telefonoValido = (valor) => /^\d+$/.test(valor);
-
   const handleCrearArea = async () => {
-    if (!nombre || !responsable || !correo || !telefono) {
-      alert("Todos los campos obligatorios deben ser completados.");
+    if (!nombre) {
+      alert("El nombre es obligatorio.");
       return;
     }
 
-    if (!correoValido(correo)) {
-      alert("Correo inválido.");
-      return;
-    }
-
-    if (!telefonoValido(telefono)) {
-      alert("El teléfono debe contener solo números.");
-      return;
-    }
-
-    const nuevaArea = {
-      nombre,
-      responsable,
-      correo,
-      telefono,
-      ubicacion,
-      descripcion,
-    };
+    const nuevaArea = { nombre, descripcion };
 
     const { error } = await supabase.from("areas").insert([nuevaArea]);
     if (error) {
@@ -71,46 +46,27 @@ const AreaManagement = () => {
 
     fetchAreas();
     setNombre("");
-    setResponsable("");
-    setCorreo("");
-    setTelefono("");
-    setUbicacion("");
     setDescripcion("");
   };
 
   const abrirModalEdicion = (area) => {
     setEditAreaId(area.id_area);
     setEditData({
+      id_area: area.id_area,
       nombre: area.nombre,
-      responsable: area.responsable,
-      correo: area.correo,
-      telefono: area.telefono,
-      ubicacion: area.ubicacion,
       descripcion: area.descripcion,
     });
   };
 
   const guardarEdicion = async () => {
-    const { nombre, responsable, correo, telefono } = editData;
-
-    if (!nombre || !responsable || !correo || !telefono) {
-      alert("Todos los campos obligatorios deben ser completados.");
-      return;
-    }
-
-    if (!correoValido(correo)) {
-      alert("Correo inválido.");
-      return;
-    }
-
-    if (!telefonoValido(telefono)) {
-      alert("El teléfono debe contener solo números.");
+    if (!editData.nombre) {
+      alert("El nombre es obligatorio.");
       return;
     }
 
     const { error } = await supabase
       .from("areas")
-      .update(editData)
+      .update({ nombre: editData.nombre, descripcion: editData.descripcion })
       .eq("id_area", editAreaId);
 
     if (error) {
@@ -140,11 +96,31 @@ const AreaManagement = () => {
     }
   };
 
-  const areasFiltradas = areas.filter(
-    (a) =>
-      a.nombre.toLowerCase().includes(filtro) ||
-      a.responsable.toLowerCase().includes(filtro)
-  );
+  const areasFiltradas = areas
+    .filter((a) => {
+      const filtroLower = filtro.toLowerCase();
+      return (
+        a.nombre.toLowerCase().includes(filtroLower) ||
+        a.descripcion.toLowerCase().includes(filtroLower) ||
+        a.id_area.toString().includes(filtroLower)
+      );
+    })
+    .sort((a, b) => {
+      const campoA = a[orden.columna];
+      const campoB = b[orden.columna];
+
+      if (orden.columna === "id_area") {
+        return orden.asc ? campoA - campoB : campoB - campoA;
+      }
+
+      if (typeof campoA === "string" && typeof campoB === "string") {
+        return orden.asc
+          ? campoA.localeCompare(campoB)
+          : campoB.localeCompare(campoA);
+      }
+
+      return 0;
+    });
 
   const totalPaginas = Math.ceil(areasFiltradas.length / itemsPorPagina);
   const inicio = (paginaActual - 1) * itemsPorPagina;
@@ -154,24 +130,32 @@ const AreaManagement = () => {
     if (num >= 1 && num <= totalPaginas) setPaginaActual(num);
   };
 
+  const ordenarPor = (columna) => {
+    setOrden((prev) => ({
+      columna,
+      asc: prev.columna === columna ? !prev.asc : true,
+    }));
+  };
+
+  const iconoOrden = (columna) => {
+    if (orden.columna !== columna) return <FaSort />;
+    return orden.asc ? <FaSortUp /> : <FaSortDown />;
+  };
+
   return (
     <div className="area-container">
       <h2 className="area-heading">Crear Nueva Área</h2>
       <input className="area-input" placeholder="Nombre del Área" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-      <input className="area-input" placeholder="Responsable del Área" value={responsable} onChange={(e) => setResponsable(e.target.value)} />
-      <input className="area-input" placeholder="Correo institucional" value={correo} onChange={(e) => setCorreo(e.target.value)} />
-      <input className="area-input" placeholder="Teléfono de contacto" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-      <input className="area-input" placeholder="Ubicación física" value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} />
       <input className="area-input" placeholder="Descripción general" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
       <button className="area-btn-primary" onClick={handleCrearArea}>Crear</button>
 
       <h2 className="area-heading">Áreas Registradas</h2>
       <input
         className="area-input"
-        placeholder="Buscar por nombre o responsable"
+        placeholder="Buscar por ID, nombre o descripción"
         value={filtro}
         onChange={(e) => {
-          setFiltro(e.target.value.toLowerCase());
+          setFiltro(e.target.value);
           setPaginaActual(1);
         }}
       />
@@ -180,26 +164,20 @@ const AreaManagement = () => {
         <table className="area-table">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Responsable</th>
-              <th>Correo</th>
-              <th>Teléfono</th>
-              <th>Ubicación</th>
-              <th>Descripción</th>
+              <th onClick={() => ordenarPor("id_area")}>ID {iconoOrden("id_area")}</th>
+              <th onClick={() => ordenarPor("nombre")}>Nombre {iconoOrden("nombre")}</th>
+              <th onClick={() => ordenarPor("descripcion")}>Descripción {iconoOrden("descripcion")}</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {paginados.map((a) => (
               <tr key={a.id_area}>
+                <td>{a.id_area}</td>
                 <td>{a.nombre}</td>
-                <td>{a.responsable}</td>
-                <td>{a.correo}</td>
-                <td>{a.telefono}</td>
-                <td>{a.ubicacion}</td>
                 <td>{a.descripcion}</td>
                 <td>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <div className="area-actions">
                     <button className="area-btn-edit" onClick={() => abrirModalEdicion(a)}>Editar</button>
                     <button className="area-btn-danger" onClick={() => eliminarArea(a.id_area)}>Eliminar</button>
                   </div>
@@ -208,7 +186,7 @@ const AreaManagement = () => {
             ))}
             {paginados.length === 0 && (
               <tr>
-                <td colSpan="7" style={{ textAlign: "center", padding: "1rem" }}>
+                <td colSpan="4" className="area-no-results">
                   No se encontraron resultados.
                 </td>
               </tr>
@@ -218,6 +196,13 @@ const AreaManagement = () => {
       </div>
 
       <div className="area-pagination">
+        <button
+          onClick={() => cambiarPagina(paginaActual - 1)}
+          disabled={paginaActual === 1}
+          className="area-page-btn"
+        >
+          <FaChevronLeft />
+        </button>
         {Array.from({ length: totalPaginas }, (_, i) => (
           <button
             key={i}
@@ -227,24 +212,40 @@ const AreaManagement = () => {
             {i + 1}
           </button>
         ))}
+        <button
+          onClick={() => cambiarPagina(paginaActual + 1)}
+          disabled={paginaActual === totalPaginas}
+          className="area-page-btn"
+        >
+          <FaChevronRight />
+        </button>
       </div>
 
       {editAreaId && (
         <div className="area-modal-overlay">
           <div className="area-modal-content">
-            <h3 style={{ marginBottom: "1rem" }}>Editar Área</h3>
-            {Object.entries(editData).map(([key, value]) => (
-              <input
-                key={key}
-                className="area-input"
-                name={key}
-                value={value}
-                onChange={handleEditChange}
-                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
-                disabled={key === "id_area"}
-              />
-            ))}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "1rem" }}>
+            <h3 className="area-modal-title">Editar Área</h3>
+            <input
+              className="area-input"
+              name="id_area"
+              value={editData.id_area}
+              disabled
+            />
+            <input
+              className="area-input"
+              name="nombre"
+              value={editData.nombre}
+              onChange={handleEditChange}
+              placeholder="Nombre"
+            />
+            <input
+              className="area-input"
+              name="descripcion"
+              value={editData.descripcion}
+              onChange={handleEditChange}
+              placeholder="Descripción"
+            />
+            <div className="area-modal-actions">
               <button className="area-btn-primary" onClick={guardarEdicion}>Guardar</button>
               <button className="area-btn-cancel" onClick={() => setEditAreaId(null)}>Cancelar</button>
             </div>

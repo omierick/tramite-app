@@ -1,471 +1,276 @@
 import jsPDF from "jspdf";
-import fondoImagen from "../assets/UR-003-AUTORIZACIÓN-DE-LOTIFICACIÓN.jpg";
+import autoTable from "jspdf-autotable";
+import logoAyuntamiento from "../assets/logo-ayuntamiento.png";
+import logoNR from "../assets/logo-nr2025.png";
+import instruccionesImg from "../assets/Instrucciones.jpg";
 
 export const generatePDF = (tramite) => {
-  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  const doc = new jsPDF({ unit: "mm", format: [216, 330] }); // Tamaño oficio
   const campos = tramite.campos || {};
-  const now = new Date();
+  const firma = tramite.firma;
 
-  const agregarFondo = () => {
+    if (tramite.tipo === "Omiwave Desarrollo Humano") {
+
+  const agregarEncabezado = () => {
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    doc.addImage(fondoImagen, "JPEG", 0, 0, pageWidth, pageHeight);
+    doc.addImage(logoAyuntamiento, "PNG", 10, 8, 40, 20);
+    doc.addImage(logoNR, "PNG", pageWidth - 50, 8, 40, 20);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("OMIWAVE DESARROLLO HUMANO", pageWidth / 2, 32, { align: "center" });
   };
 
-  const nuevaPagina = () => {
-    doc.addPage("letter", "portrait");
-    doc.setFontSize(9);
-    doc.setTextColor(0);
-    agregarFondo();
-    return 60;
+  const dibujarCheckbox = (x, y, label, checked) => {
+    doc.setDrawColor(0);
+    doc.rect(x, y, 4, 4);
+    if (checked) doc.text("X", x + 1, y + 3.2);
+    doc.text(label, x + 6, y + 3.2);
   };
 
-  let y = 50;
-  agregarFondo();
+  const checkFields = [
+    "Alineamiento", "Cédula Informativa de Zonificación", "Prórroga de Licencia",
+    "Ampliación de Construcción", "Obra Extemporánea", "Excavación o Relleno",
+    "Incremento de Altura", "Suspensión de Obra", "Número Oficial",
+    "Demolición Total o Parcial", "Muro de Contención", "Cambio de Uso de Suelo",
+    "Modificación de Proyecto", "Término de Obra", "Obra Nueva",
+    "Rotura de Pavimento", "Estructura para Anuncios", "Barda",
+    "Marquesina", "Instalación de Antenas", "Radiotelecomunicaciones",
+    "Incremento de Densidad"
+  ];
 
-  const salto = (altura = 5) => {
-    if (y + altura > 265) y = nuevaPagina();
-    else y += altura;
+  let y = 38;
+  agregarEncabezado();
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("TIPO DE TRÁMITE", 15, y);
+  y += 5;
+
+  const cols = [15, 85, 155];
+  const rowHeight = 6;
+  checkFields.forEach((field, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const value = !!campos[field] && campos[field] !== "false";
+    dibujarCheckbox(cols[col], y + row * rowHeight, field, value);
+  });
+
+  y += Math.ceil(checkFields.length / 3) * rowHeight + 10;
+  const crearTabla = (titulo, datos) => {
+    autoTable(doc, {
+      startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y,
+      head: [[{ content: titulo, colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }]],
+      body: datos.map(([label, valor]) => [label, valor || ""]),
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 1.5 },
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 100 } },
+      margin: { left: 15, right: 15 }
+    });
   };
 
-  if (tramite.tipo === "Autorización de Lotificación") {
-    const {
-      Propietario: propietario = "",
-      Teléfono: telefonoPropietario = "",
-      "Nombre del PDRO": nombrePDRO = "",
-      "Número de PDRO": noPDRO = "",
-      "Teléfono PDRO": telefonoPDRO = "",
-      Ubicación: ubicacion = "",
-      "Número de Lote": lote = "",
-      Manzana: manz = "",
-      "Sección o Super Manzana": secsmz = "",
-      "Domicilio de Notificación": domicilio = "",
-      dia = now.getDate(),
-      mes = now.toLocaleString("es-MX", { month: "long" }),
-      anio = now.getFullYear(),
-      lugar = "Torreón",
-      folio = tramite.folio || tramite.id || "No asignado",
-    } = campos;
+  crearTabla("DATOS DEL INMUEBLE", [
+    ["Propietario:", campos["Propietario"]],
+    ["Representante Legal:", campos["Representante Legal"]],
+    ["Calle:", campos["Calle"]],
+    ["Número:", campos["Número"]],
+    ["Manzana:", campos["Manzana"]],
+    ["Lote:", campos["Lote"]],
+    ["Colonia o Fraccionamiento:", campos["Pueblo, Colonia o Fraccionamiento"]],
+    ["Clave Catastral:", campos["Clave Catastral"]],
+    ["Superficie del Predio:", campos["Superficie del Predio"]],
+    ["Superficie Construida:", campos["Superficie Construida"]],
+    ["Superficie Prevista:", campos["Superficie Prevista"]],
+    ["Uso del Suelo Actual:", campos["Uso del Suelo Actual"]],
+    ["Uso del Suelo que se Pretende:", campos["Uso del Suelo que se Pretende"]]
+  ]);
 
-    const firma = tramite.firma;
+  crearTabla("DOMICILIO PARA RECIBIR NOTIFICACIONES EN NICOLÁS ROMERO", [
+    ["Calle:", campos["Calle (Notificaciones)"]],
+    ["Número:", campos["Número (Notificaciones)"]],
+    ["Manzana:", campos["Manzana (Notificaciones)"]],
+    ["Lote:", campos["Lote (Notificaciones)"]],
+    ["Colonia:", campos["Colonia"]],
+    ["Código Postal:", campos["Código Postal"]],
+    ["Correo Electrónico:", campos["Correo Electrónico"]],
+    ["Teléfono:", campos["Teléfono"]]
+  ]);
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("AUTORIZACIÓN DE LOTIFICACIÓN", 105, y, { align: "center" });
-    salto(10);
+  crearTabla("DATOS FISCALES", [
+    ["Nombre o Razón Social:", campos["Nombre o Razón Social"]],
+    ["RFC:", campos["RFC"]],
+    ["Correo Fiscal:", campos["Correo Fiscal"]],
+    ["Domicilio Fiscal:", campos["Domicilio Fiscal"]]
+  ]);
 
-    // FECHA, LUGAR Y FOLIO
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text("FOLIO Y FECHA", 15, y);
-    doc.setFont("helvetica", "");
+  crearTabla("CROQUIS DE LOCALIZACIÓN", [
+    ["Coordenadas UTM:", campos["Coordenadas UTM"]]
+  ]);
 
-    // Dibujar cuadro general dividido en dos
-    doc.rect(15, y + 2, 90, 8); // Columna izquierda: Folio
-    doc.rect(105, y + 2, 90, 8); // Columna derecha: Fecha y lugar
+  crearTabla("DATOS DEL DIRECTOR RESPONSABLE DE OBRA", [
+    ["Nombre del D.R.O.:", campos["Nombre del D.R.O."]],
+    ["Domicilio del D.R.O.:", campos["Domicilio del D.R.O."]],
+    ["Registro del D.R.O.:", campos["Registro del D.R.O."]],
+    ["Cédula Profesional:", campos["Cédula Profesional"]],
+    ["Teléfono del D.R.O.:", campos["Teléfono del D.R.O."]]
+  ]);
 
-    // Texto alineado a cada sección
-    doc.text(`Folio: ${folio}`, 17, y + 8);
-    doc.text(
-      `Lugar: ${lugar}  Día: ${dia}  Mes: ${mes}  Año: ${anio}`,
-      107,
-      y + 8
-    );
+  crearTabla("FIRMAS", [
+    ["Expediente:", campos["Expediente"]],
+    ["Fecha:", campos["Fecha"]],
+    ["Lugar:", campos["Lugar"]]
+  ]);
+  // === PÁGINA 1: Firmas finales ===
+  // Aseguramos que haya espacio suficiente debajo de la tabla anterior
+let firmaInicioY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 40 : y + 40;
+const firmaAltura = 25;
+const firmaAncho = 50;
 
-    salto(14);
+if (firma) {
+  doc.addImage(firma, "PNG", 15, firmaInicioY, 40, 20); // Firma a la izquierda
+  firmaInicioY += 28; // Añadir espacio vertical tras la firma
+}
 
-    doc.setFont("helvetica", "bold");
-    doc.text("DATOS GENERALES", 15, y);
-    salto(6);
-    doc.setFont("helvetica", "");
+// Dibujar líneas de firma y etiquetas más abajo
+const firmas = [
+  { x: 15, label: "FIRMA DEL SOLICITANTE" },
+  { x: 83, label: "FIRMA DE QUIEN RECIBE EN VENTANILLA" },
+  { x: 150, label: "FIRMA DEL D.R.O." }
+];
 
-    const drawCampo = (x, w, label, valor) => {
-      doc.rect(x, y, w, 8);
-      doc.text(`${label}: ${valor}`, x + 2, y + 5);
-    };
+firmas.forEach(({ x, label }) => {
+  doc.line(x, firmaInicioY, x + firmaAncho, firmaInicioY); // Línea para firma
+  doc.setFontSize(9);
+  doc.text(label, x + firmaAncho / 2, firmaInicioY + 5, { align: "center" });
+});
 
-    drawCampo(15, 100, "Propietario", propietario);
-    drawCampo(115, 80, "Teléfono", telefonoPropietario);
-    salto(9);
 
-    drawCampo(15, 80, "Nombre PDRO", nombrePDRO);
-    drawCampo(95, 50, "No. PDRO", noPDRO);
-    drawCampo(145, 50, "Teléfono", telefonoPDRO);
-    salto(9);
+  // === PÁGINA 2: Imagen de instrucciones completa ===
+  doc.addPage([216, 330]);
+  doc.addImage(instruccionesImg, "JPEG", 0, 0, 216, 330);
 
-    drawCampo(15, 100, "Ubicación", ubicacion);
-    drawCampo(115, 25, "Lote", lote);
-    drawCampo(140, 30, "Manz.", manz);
-    drawCampo(170, 25, "Sec/Smz", secsmz);
-    salto(9);
+  // === PÁGINA 3: Aviso de privacidad ===
+  doc.addPage([216, 330]);
 
-    drawCampo(15, 180, "Domicilio de Notificación", domicilio);
-    salto(14);
+  const avisoX = 15;
+  const avisoY = 30;
+  const avisoW = 186;
+  const avisoH = 100;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("REQUISITOS", 15, y);
-    salto(6);
-    doc.setFont("helvetica", "");
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.3);
+  doc.rect(avisoX, avisoY, avisoW, avisoH);
 
-    const requisitos = [
-      "1.- Original y copia de la solicitud de la ventanilla con firmas autógrafas.",
-      "2.- 4 planos del proyecto de lotificación con firma autógrafa del propietario y del director responsable de obra, con las características correspondientes.",
-      "3.- Factibilidad vigente de servicios expedidos por el sistema municipal de aguas y saneamientos de Torreón, Coahuila...",
-      "4.- Copia simple del recibo de CFE (electrificación).",
-      "5.- CD con el proyecto de lotificación en programa AutoCAD 2014 con cuadro de construcción con coordenadas UTM.",
-      "6.- Plano Topográfico.",
-      "7.- Copia de identificación oficial del propietario.",
-      "8.- Copia de identificación oficial del Perito Director Responsable de Obra.",
-    ];
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("SEÑAL DE AVISO", avisoX + avisoW / 2, avisoY + 6, { align: "center" });
 
-    requisitos.forEach((line) => {
-      const splitted = doc.splitTextToSize(line, 180);
-      if (y + splitted.length * 4.5 > 265) y = nuevaPagina();
-      doc.text(splitted, 15, y);
-      y += splitted.length * 4.5;
-    });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  const avisoTexto = `El ayuntamiento de Nicolás Romero es el responsable de la protección y tratamiento de los datos personales que usted proporcione en la Dirección de área de Desarrollo Urbano. Los datos recabados serán protegidos conforme a lo dispuesto a la Ley de Protección de datos personales en posesión de sujetos obligados del Estado de México y Municipios (LPDPPSOEMYM) y demás disposiciones aplicables. Sus datos personales serán usados con las siguientes finalidades: Dar trámite y seguimiento a las solicitudes que ingresan, tener control de los expedientes, para consulta y verificación de estatus, cuando proceda a expedir las licencias, autorizaciones, constancias, permisos o cédulas según la solicitud realizada por el contribuyente, realizar las notificaciones que correspondan y generar información estadística. Usted puede conocer el aviso de privacidad integral en las oficinas de la Dirección de Área de Desarrollo Urbano, en la Unidad de Transparencia Municipal y en la página web del Ayuntamiento.\n\nHe leído el aviso de privacidad integral y acepto los términos.`;
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text(
-      "COSTO DE LA LOTIFICACIÓN CON BASE AL NUMERAL 2 DEL ARTÍCULO 37 DE LA LEY DE INGRESOS 2023",
-      15,
-      y
-    );
-    salto(5);
-    doc.setFont("helvetica", "");
+  const avisoLineas = doc.splitTextToSize(avisoTexto, avisoW - 10);
+  doc.text(avisoLineas, avisoX + 5, avisoY + 12);
 
-    const tipos = [
-      ["Popular", "$ 171.00 M2"],
-      ["Interés Social", "$ 179.00 M2"],
-      ["Interés Medio", "$ 389.00 M2"],
-      ["Residencial", "$ 509.00 M2"],
-      ["Campestre", "$ 509.00 M2"],
-      ["Comercial", "$ 471.00 M2"],
-      ["Industrial", "$ 275.00 M2"],
-    ];
+  const firmaAvisoY = avisoY + avisoH - 10;
+  const firmaAvisoX1 = avisoX + 40;
+  const firmaAvisoX2 = avisoX + avisoW - 40;
+  doc.line(firmaAvisoX1, firmaAvisoY, firmaAvisoX2, firmaAvisoY);
+  doc.setFontSize(8);
+  doc.text("Nombre y firma", (firmaAvisoX1 + firmaAvisoX2) / 2, firmaAvisoY + 5, { align: "center" });
 
-    doc.setFont("helvetica", "bold");
-    const col1X = 20;
-    const col2X = 105;
-    const rowHeight = 5;
+  // === Finalizar ===
+  doc.save("Omiwave_Desarrollo_Humano.pdf");
 
-    doc.rect(col1X, y, 85, rowHeight);
-    doc.text("TIPO DE LOTIFICACIÓN", col1X + 2, y + 3.5);
-    doc.rect(col2X, y, 50, rowHeight);
-    doc.text("COSTO POR M2", col2X + 2, y + 3.5);
-    salto(rowHeight);
-
-    doc.setFont("helvetica", "");
-    tipos.forEach((tipo) => {
-      doc.rect(col1X, y, 85, rowHeight);
-      doc.text(tipo[0], col1X + 2, y + 3.5);
-      doc.rect(col2X, y, 50, rowHeight);
-      doc.text(tipo[1], col2X + 2, y + 3.5);
-      salto(rowHeight);
-    });
-
-    salto(5);
-    if (y + 35 > 265) y = nuevaPagina();
-
-    doc.setFontSize(9);
-    doc.text(
-      "EL/LA QUE SUSCRIBE BAJO PROTESTA DE DECIR VERDAD, MANIFIESTO QUE LOS DATOS AQUÍ PROPORCIONADOS...",
-      15,
-      y,
-      { maxWidth: 180 }
-    );
-    salto(10);
-
-    doc.text("NOMBRE Y FIRMA DEL PROPIETARIO", 20, y + 25);
-    doc.text("NOMBRE Y FIRMA DEL PDRO. NO.", 120, y + 25);
-    doc.line(20, y + 20, 80, y + 20);
-    doc.line(120, y + 20, 180, y + 20);
-
-    if (firma) {
-      doc.addImage(firma, "PNG", 20, y, 40, 15);
-    }
-
-    y = nuevaPagina();
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(
-      "CARACTERÍSTICAS QUE DEBERÁ TENER UN PLANO\nPROYECTO DE LOTIFICACIÓN",
-      105,
-      y,
-      { align: "center" }
-    );
-    salto(12);
-
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "");
-
-    const caracteristicas = [
-      "1.- LOTIFICACIÓN: INDICAR LA NUMERACIÓN DE CADA MANZANA Y DE CADA UNO DE LOS LOTES...",
-      "2.- POLÍGONO DEL TERRENO A FRACCIONAR SEGÚN ESCRITURAS Y/O APEO...",
-      "3.- CURVAS Y COTAS DE NIVEL DEL TERRENO CON REFERENCIA AL NIVEL DEL MAR.",
-      "4.- SI EL POLÍGONO A FRACCIONAR ES PORCIÓN DE UN TERRENO DE MAYOR EXTENSIÓN...",
-      "5.- SI EL TERRENO A FRACCIONAR SE COMPONE DE DOS O MÁS PREDIOS...",
-      "6.- TRAZA URBANA CIRCUNDANTE CON SUS RESPECTIVOS ACCESOS AL PREDIO...",
-      "7.- EN CASO DE EXISTIR EN EL PREDIO O EN SUS LINDEROS INSTALACIONES DE LA CFE...",
-      "8.- SECCIONES TRANSVERSALES DE LAS CALLES TIPO EN LAS QUE EL ARROYO DEBERÁ SER MÚLTIPLO DE...",
-      "9.- CROQUIS DE LOCALIZACIÓN CON REFERENCIA Y DISTANCIAS PRECISAS...",
-      "10.- CUADRO DE DISTRIBUCIÓN DE ÁREAS CONTENIENDO: ÁREA TOTAL, ÁREA VENDIBLE, ÁREA VIAL Y ÁREA DE DONACIÓN...",
-      "11.- NOMBRES PROPUESTOS A LAS CALLES.",
-    ];
-
-    caracteristicas.forEach((line) => {
-      const splitted = doc.splitTextToSize(line, 180);
-      if (y + splitted.length * 4.5 > 265) y = nuevaPagina();
-      doc.text(splitted, 15, y);
-      y += splitted.length * 4.5;
-    });
-
-    y = nuevaPagina();
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(
-      "AVISO DE PRIVACIDAD PARA EL TRÁMITE DE AUTORIZACIÓN DE LOTIFICACIÓN",
-      105,
-      y,
-      { align: "center" }
-    );
-    salto(12);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "");
-
-    const aviso = [
-      "La Dirección General de Ordenamiento Territorial y Urbanismo del R. Ayuntamiento de Torreón...",
-      "La información aquí descrita es en cumplimiento del artículo 21 y 22, de la Ley de Protección de Datos...",
-      "Teléfono del Propietario. Ubicación. Domicilio de Notificación. Credencial de Elector.",
-      "Los datos personales recabados tienen como finalidad:...",
-      "Para Uso y Trámite de Autorización de Lotificación.",
-      "Para Actualización de los Sistemas Municipales y Término del Trámite.",
-      "Así mismo se informa, que la información relacionada en este trámite de autorización...",
-      "Derechos ARCO...",
-      "Este Aviso de Privacidad puede sufrir modificaciones, cambios o actualizaciones derivadas...",
-    ];
-
-    aviso.forEach((line) => {
-      doc.text(line, 15, y, { maxWidth: 180 });
-      salto(10);
-    });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const firmaWidth = 40;
-    const firmaHeight = 15;
-    const firmaX = (pageWidth - firmaWidth) / 2;
-    const firmaY = 230;
-    const lineaWidth = 60;
-    const lineaX = (pageWidth - lineaWidth) / 2;
-    const lineaY = 242;
-
-    doc.setLineWidth(0.2);
-    doc.line(lineaX, lineaY, lineaX + lineaWidth, lineaY);
-
-    doc.setFont("helvetica", "bold");
-    doc.text("NOMBRE Y FIRMA DEL SOLICITANTE", pageWidth / 2, 250, {
-      align: "center",
-    });
-
-    if (firma) {
-      doc.addImage(firma, "PNG", firmaX, firmaY, firmaWidth, firmaHeight);
-    }
-
-    doc.save("Autorizacion_Lotificacion.pdf");
-  } else {
+ } else {
     import("html2pdf.js").then((html2pdf) => {
       const element = document.createElement("div");
       const fechaActual = new Date().toLocaleString();
 
-      const camposHTML = Object.entries(tramite.campos || {})
+      const camposHTML = Object.entries(campos)
         .map(
           ([campo, valor]) => `
-        <tr>
-          <th>${campo}</th>
-          <td>${valor || "-"}</td>
-        </tr>
-      `
+            <tr><th>${campo}</th><td>${valor || "-"}</td></tr>
+          `
         )
         .join("");
 
       const firmaHTML =
-        tramite.firma && tramite.firma.startsWith("data:image/")
+        firma && firma.startsWith("data:image/")
           ? `
         <div class="firma">
           <h2>Firma del Solicitante</h2>
-          <img src="${tramite.firma}" alt="Firma" style="max-width: 300px; max-height: 150px;" />
-        </div>
-      `
+          <img src="${firma}" alt="Firma" style="max-width: 300px; max-height: 150px;" />
+        </div>`
           : "";
 
-      // === Validación dinámica de logo ===
       const logoPath =
-        tramite.logo_url !== null &&
-        tramite.logo_url !== undefined &&
-        tramite.logo_url.trim() !== ""
+        tramite.logo_url?.trim()
           ? tramite.logo_url
           : new URL("../assets/logo3.png", import.meta.url).href;
 
-      const drawCampo = (x, w, label, valor) => {
-        doc.rect(x, y, w, 8);
-        doc.text(`${label}: ${valor}`, x + 2, y + 5);
-      };
-
-      // Luego la usas
-      const titulo =
-        tramite.campos?.tituloEmpresa &&
-        tramite.campos.tituloEmpresa.trim() !== ""
-          ? tramite.campos.tituloEmpresa
-          : "Gobierno Omiwave";
-
-      drawCampo(15, 180, "tituloEmpresa", titulo);
-      salto(9);
-
       const htmlContent = `
-      <style>
-        html, body {
-          margin: 0;
-          padding: 0;
-          font-family: Arial, sans-serif;
-          color: #111;
-        }
+        <style>
+          html, body { margin: 0; padding: 0; font-family: Arial, sans-serif; color: #111; }
+          #pdf-root { width: 794px; padding: 60px 40px; box-sizing: border-box; }
+          .encabezado { text-align: center; margin-bottom: 20px; }
+          .encabezado img { height: 80px; margin-bottom: 10px; }
+          .encabezado h1 { margin: 0; font-size: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; page-break-inside: auto; }
+          th, td { padding: 8px; border: 1px solid #ccc; vertical-align: top; }
+          th { background-color: #f0f4f8; text-align: left; }
+          h1, h2, h3 { margin: 10px 0; page-break-after: avoid; }
+          .firma { text-align: center; margin-top: 50px; page-break-before: auto; }
+          .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 60px; }
+          tr { break-inside: avoid; }
+        </style>
 
-        #pdf-root {
-          width: 794px;
-          padding: 60px 40px;
-          box-sizing: border-box;
-        }
+        <div id="pdf-root">
+          <div class="encabezado">
+            <img src="${logoPath}" alt="Logo" />
+          </div>
+          <div style="text-align: center;">
+            <h2>Sistema de Trámites Digitales</h2>
+            <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
+          </div>
 
-        .encabezado {
-          text-align: center;
-          margin-bottom: 20px;
-        }
+          <hr style="margin: 20px 0;" />
 
-        .encabezado img {
-          height: 80px;
-          margin-bottom: 10px;
-        }
+          <h3>Datos del Trámite</h3>
+          <table>
+            <tr><th>Folio</th><td>${tramite.folio || tramite.id || "-"}</td></tr>
+            <tr><th>Nombre del Trámite</th><td>${tramite.nombre || "-"}</td></tr>
+            <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
+            <tr><th>Fecha de Solicitud</th><td>${tramite.createdAt ? new Date(tramite.createdAt).toLocaleDateString() : "-"}</td></tr>
+            <tr><th>Fecha de Validación</th><td>${tramite.reviewedAt ? new Date(tramite.reviewedAt).toLocaleDateString() : "-"}</td></tr>
+            <tr><th>Estado</th><td>${tramite.estado || "-"}</td></tr>
+          </table>
 
-        .encabezado h1 {
-          margin: 0;
-          font-size: 20px;
-        }
+          <h3>Solicitante</h3>
+          <table>
+            <tr><th>Nombre</th><td>${tramite.solicitante || "-"}</td></tr>
+          </table>
 
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 15px;
-          page-break-inside: auto;
-        }
+          <h3>Campos adicionales</h3>
+          <table>${camposHTML}</table>
 
-        th, td {
-          padding: 8px;
-          border: 1px solid #ccc;
-          vertical-align: top;
-        }
+          ${firmaHTML}
 
-        th {
-          background-color: #f0f4f8;
-          text-align: left;
-        }
-
-        h1, h2, h3 {
-          margin: 10px 0;
-          page-break-after: avoid;
-        }
-
-        .firma {
-          text-align: center;
-          margin-top: 50px;
-          page-break-before: auto;
-        }
-
-        .footer {
-          font-size: 12px;
-          color: #6b7280;
-          text-align: center;
-          margin-top: 60px;
-        }
-
-        tr {
-          break-inside: avoid;
-        }
-
-        @media print {
-          body {
-            padding-top: 40px;
-          }
-        }
-      </style>
-
-      <div id="pdf-root">
-        <div class="encabezado">
-          <img src="${logoPath}" alt="Logo" />
+          <div class="footer">
+            Documento generado electrónicamente. No requiere firma física.<br/>
+            Generado el: ${fechaActual}
+          </div>
         </div>
-
-        <div style="text-align: center;">
-          <h2>Sistema de Trámites Digitales</h2>
-          <p style="font-size: 14px; color:#6b7280;">Documento Validado de Trámite</p>
-        </div>
-
-        <hr style="margin: 20px 0;" />
-
-        <h3>Datos del Trámite</h3>
-        <table>
-          <tr><th>Folio</th><td>${tramite.folio || tramite.id || "-"}</td></tr>
-          <tr><th>Nombre del Trámite</th><td>${tramite.nombre || "-"}</td></tr>
-          <tr><th>Tipo</th><td>${tramite.tipo}</td></tr>
-          <tr><th>Fecha de Solicitud</th><td>${
-            tramite.createdAt
-              ? new Date(tramite.createdAt).toLocaleDateString()
-              : "-"
-          }</td></tr>
-          <tr><th>Fecha de Validación</th><td>${
-            tramite.reviewedAt
-              ? new Date(tramite.reviewedAt).toLocaleDateString()
-              : "-"
-          }</td></tr>
-          <tr><th>Estado</th><td>${tramite.estado}</td></tr>
-        </table>
-
-        <h3>Solicitante</h3>
-        <table>
-          <tr><th>Nombre</th><td>${tramite.solicitante || "-"}</td></tr>
-        </table>
-
-        <h3>Campos adicionales</h3>
-        <table>
-          ${camposHTML}
-        </table>
-
-        ${firmaHTML}
-
-        <div class="footer">
-          Documento generado electrónicamente. No requiere firma física.<br/>
-          Generado el: ${fechaActual}
-        </div>
-      </div>
-    `;
+      `;
 
       element.innerHTML = htmlContent;
 
       const opt = {
         margin: 0,
         filename: `tramite_${tramite.tipo.replace(/\s+/g, "_")}.pdf`,
-        html2canvas: {
-          scale: 2,
-          useCORS: true, // <=== Habilitar CORS
-        },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "mm", format: "a4" },
       };
 
       html2pdf.default().from(element).set(opt).save();
     });
   }
-
-  // ... aquí puedes seguir con más tipos de trámite usando la misma estructura
 };
