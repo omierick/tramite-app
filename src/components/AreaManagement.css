@@ -23,7 +23,7 @@
 }
 
 .area-btn-primary {
-  background: #2563eb;
+  background: #1e3a8a;
   color: #fff;
   border: none;
   padding: 0.6rem;
@@ -38,7 +38,7 @@
 }
 
 .area-btn-cancel {
-  background: #9ca3af;
+  background: #ef4444;
   color: #fff;
   border: none;
   padding: 0.6rem;
@@ -176,15 +176,23 @@
 
 .area-modal-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: center;
+  align-items: center; /* <-- Esto alinea verticalmente */
+  gap: 1rem;
   margin-top: 1rem;
 }
 .area-modal-btn {
-  flex: 1;
-  padding: 0.6rem;
+  flex: none;               /* <-- Para evitar que uno crezca más que el otro */
+  width: 160px;             /* Tamaño fijo y uniforme */
+  height: 48px;             /* Misma altura exacta */
+  padding: 0;
   border-radius: 6px;
   border: none;
+  font-size: 1rem;
+  font-weight: bold;
   cursor: pointer;
+  display: flex;
+  align-items: center;      /* Centrado vertical */
+  justify-content: center;  /* Centrado horizontal */
   transition: background 0.2s ease;
 }

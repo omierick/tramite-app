@@ -224,13 +224,9 @@ const EditTipoModal = ({ tipo, isOpen, onClose, onSave }) => {
         </div>
 
         <div className="modal-actions">
-          <button className="btn btn-primary" onClick={guardar}>
-            Guardar
-          </button>
-          <button className="btn btn-danger" onClick={onClose}>
-            Cancelar
-          </button>
-        </div>
+  <button className="btn btn-primary" onClick={guardar}>Guardar</button>
+  <button className="btn btn-danger" onClick={onClose}>Cancelar</button>
+</div>
       </div>
     </div>
   );

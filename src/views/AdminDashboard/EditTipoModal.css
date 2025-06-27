@@ -1,3 +1,10 @@
+/* Normalización global de botones */
+button {
+  line-height: normal;
+  vertical-align: middle;
+  font-family: inherit;
+}
+
 /* Fondo oscurecido */
 .modal-overlay {
   position: fixed;
@@ -53,7 +60,7 @@
   max-height: 60px;
 }
 
-/* Área de edición de campos (fuera del scroll) */
+/* Área de edición de campos */
 .campo-add {
   display: flex;
   flex-wrap: wrap;
@@ -67,9 +74,9 @@
   min-width: 150px;
 }
 
-/* Scroll para los campos ya añadidos */
+/* Scroll para los campos */
 .campos-scroll {
-  max-height: 300px; /* MÁS espacio visual */
+  max-height: 300px;
   overflow-y: auto;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -107,6 +114,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .btn-primary {
@@ -127,14 +135,38 @@
 /* Acciones del modal */
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   gap: 1rem;
   margin-top: 2rem;
 }
-.modal-actions button {
-  padding: 0.6rem 1.2rem;
+
+.modal-actions .btn-primary,
+.modal-actions .btn-danger {
+  width: 180px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: bold;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   border: none;
   border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  vertical-align: middle;
+  line-height: 1;
+  font-family: inherit;
+  appearance: none; /* Evita estilos por navegador */
+}
+
+/* Hover states */
+.modal-actions .btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.modal-actions .btn-danger:hover {
+  background-color: #dc2626;
 }
