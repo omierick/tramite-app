@@ -19,6 +19,7 @@
   padding: 0.6rem;
   border-radius: 6px;
   border: 1px solid #d1d5db;
+  font-size: 1rem;
 }
 
 .area-btn-primary {
@@ -29,6 +30,11 @@
   width: 100%;
   border-radius: 6px;
   cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.area-btn-primary:hover {
+  background: #1e40af;
 }
 
 .area-btn-cancel {
@@ -51,6 +57,10 @@
   font-weight: bold;
 }
 
+.area-btn-edit:hover {
+  background-color: #059669;
+}
+
 .area-btn-danger {
   background: #ef4444;
   color: #fff;
@@ -59,6 +69,14 @@
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
+}
+
+.area-btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.area-table-wrapper {
+  overflow-x: auto;
 }
 
 .area-table {
@@ -85,33 +103,10 @@
   vertical-align: middle;
 }
 
-.area-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.area-modal-content {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 450px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
-.area-modal-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 1rem;
+.area-no-results {
+  text-align: center;
+  padding: 1rem;
+  color: #6b7280;
 }
 
 .area-actions {
@@ -136,6 +131,7 @@
   cursor: pointer;
   font-weight: bold;
   color: #374151;
+  transition: background 0.2s ease;
 }
 
 .area-page-btn.active {
@@ -148,4 +144,47 @@
   background: #e5e7eb;
   color: #9ca3af;
   cursor: not-allowed;
+}
+
+.area-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.area-modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.area-modal-title {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.area-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.area-modal-btn {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
