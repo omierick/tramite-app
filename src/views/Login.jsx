@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { useTramites } from "../context/TramitesContext"; // ✅ agregado
 import { supabase } from "../services/supabaseClient";
 import "./Login.css";
 
@@ -9,12 +10,12 @@ const Login = () => {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { login } = useAuth(); // <-- Usa el login del contexto correcto
+  const { login } = useAuth();
+  const { setCorreoUsuario, setNombreUsuario, setRolUsuario } = useTramites(); // ✅ agregado
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Busca el usuario por correo en supabase (ajusta según tu backend)
     const { data, error } = await supabase
       .from("usuarios")
       .select("*")
@@ -31,7 +32,11 @@ const Login = () => {
       return;
     }
 
-    // Aquí síguelo
+    // ✅ Guardamos el usuario en el contexto
+    setCorreoUsuario(data.correo);
+    setNombreUsuario(data.nombre);
+    setRolUsuario(data.rol);
+
     login({
       id: data.id,
       nombre: data.nombre,
@@ -39,14 +44,15 @@ const Login = () => {
       correo: data.correo,
     });
 
-    // Redirige según rol
-    if (data.rol.startsWith("admin")) {
-  navigate("/admin");
-} else if (data.rol === "revisor") {
-  navigate("/revisor");
-} else {
-  navigate("/usuario");
-}
+    const rol = data.rol.toLowerCase();
+
+    if (rol.startsWith("admin")) {
+      navigate("/admin");
+    } else if (rol.includes("revisor")) {
+      navigate("/revisor");
+    } else {
+      navigate("/usuario");
+    }
   };
 
   return (
@@ -71,7 +77,9 @@ const Login = () => {
             required
           />
         </div>
-        <button type="submit" className="btn-login">Iniciar Sesión</button>
+        <button type="submit" className="btn-login">
+          Iniciar Sesión
+        </button>
       </form>
     </div>
   );

@@ -97,6 +97,7 @@ const UserDashboard = ({ setRole }) => {
     } else {
       const nuevoTramite = {
         tipo: selectedTipo.nombre,
+        tipo_tramite_id: selectedTipo.id, // <-- ESTA LÍNEA AGREGA LA RELACIÓN CON EL ÁREA
         campos: formData,
         firma,
         logo_url: selectedTipo?.logo_url || null,

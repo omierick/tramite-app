@@ -6,6 +6,7 @@ const TramitesContext = createContext();
 export const useTramites = () => useContext(TramitesContext);
 
 export const TramitesProvider = ({ children }) => {
+  const [correoUsuario, setCorreoUsuario] = useState("");
   const [tramites, setTramites] = useState([]);
   const [tiposTramite, setTiposTramite] = useState([]);
   const [nombreUsuario, setNombreUsuario] = useState("");
@@ -19,7 +20,16 @@ export const TramitesProvider = ({ children }) => {
   const fetchTramites = async () => {
     const { data, error } = await supabase
       .from("tramites")
-      .select("*")
+      .select(
+        `
+  *,
+  tipo_tramite:tipo_tramite_id (
+    id,
+    nombre,
+    area_id
+  )
+`
+      )
       .order("createdAt", { ascending: false });
 
     if (error) {
@@ -171,8 +181,10 @@ export const TramitesProvider = ({ children }) => {
         tiposTramite,
         nombreUsuario,
         rolUsuario,
+        correoUsuario, // ✅
         setNombreUsuario,
         setRolUsuario,
+        setCorreoUsuario, // ✅
         buscarUsuarioPorCorreo,
         addTramite,
         addTipoTramite,

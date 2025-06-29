@@ -5,10 +5,8 @@ import { ToastContainer } from 'react-toastify';
 
 const App = () => (
   <DarkModeProvider>
-    <TramitesProvider>
       <AppRoutes />
       <ToastContainer />
-    </TramitesProvider>
   </DarkModeProvider>
 );
 
