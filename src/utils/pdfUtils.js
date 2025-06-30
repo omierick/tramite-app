@@ -66,7 +66,20 @@ export const generatePDF = (tramite) => {
       margin: { left: 15, right: 15 }
     });
   };
+// Mostrar Folio del trámite después de los checkboxes
+autoTable(doc, {
+  startY: y,
+  head: [[
+    { content: "FOLIO DEL TRÁMITE", colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }
+  ]],
+  body: [["Folio:", tramite.folio || tramite.id || campos["Expediente"] || ""]],
+  theme: 'grid',
+  styles: { fontSize: 9, cellPadding: 1.5 },
+  columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 100 } },
+  margin: { left: 15, right: 15 }
+});
 
+y = doc.lastAutoTable.finalY + 10;
   crearTabla("DATOS DEL INMUEBLE", [
     ["Propietario:", campos["Propietario"]],
     ["Representante Legal:", campos["Representante Legal"]],
@@ -88,7 +101,7 @@ export const generatePDF = (tramite) => {
     ["Número:", campos["Número (Notificaciones)"]],
     ["Manzana:", campos["Manzana (Notificaciones)"]],
     ["Lote:", campos["Lote (Notificaciones)"]],
-    ["Colonia:", campos["Colonia"]],
+    ["Colonia:", campos["Colonia (Notificaciones)"]],
     ["Código Postal:", campos["Código Postal"]],
     ["Correo Electrónico:", campos["Correo Electrónico"]],
     ["Teléfono:", campos["Teléfono"]]

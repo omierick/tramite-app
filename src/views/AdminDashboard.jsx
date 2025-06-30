@@ -154,14 +154,15 @@ const AdminDashboard = () => {
               Crear Trámite
             </button>
           )}
+          
+          <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
+            Tipos de Trámite
+          </button>
           {puedeVerTramites && (
             <button className={`tab-button ${activeTab === "tramites" ? "active" : ""}`} onClick={() => setActiveTab("tramites")}>
               Trámites
             </button>
           )}
-          <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
-            Tipos de Trámite
-          </button>
           {puedeGestionarUsuarios && (
             <>
               <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>

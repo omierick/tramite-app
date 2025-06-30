@@ -124,11 +124,12 @@ const UserManagement = () => {
         <input placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input placeholder="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <select value={rol} onChange={(e) => setRol(e.target.value)}>
-          <option value="revisor">revisor</option>
           <option value="admin">admin</option>
+          <option value="admin_charts">admin_charts</option>
+          <option value="admin_revisor">admin_revisor</option>
           <option value="admin_tramites">admin_tramites</option>
           <option value="admin_usuarios">admin_usuarios</option>
-          <option value="admin_charts">admin_charts</option>
+          <option value="revisor">revisor</option>
           <option value="usuario">usuario</option>
         </select>
         {rol === "revisor" && (
