@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   const updateTipoTramite = tramitesCtx?.updateTipoTramite || (() => {});
   const deleteTipoTramite = tramitesCtx?.deleteTipoTramite || (() => {});
 
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("tramites");
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
   const [campos, setCampos] = useState([]);
@@ -37,11 +37,13 @@ const AdminDashboard = () => {
 
   if (!user) return <div>Cargando usuario...</div>;
 
+  const esAdminRevisor = user.rol === "admin_revisor";
+  const puedeVerCharts = user.rol === "admin" || user.rol === "admin_charts";
+  const puedeVerTramites = ["admin", "admin_tramites", "admin_revisor"].includes(user.rol);
+  const puedeCrearTramite = ["admin", "admin_tramites", "admin_revisor"].includes(user.rol);
+  const puedeVerTiposTramite = ["admin", "admin_tramites"].includes(user.rol);
   const puedeGestionarUsuarios = user.rol === "admin" || user.rol === "admin_usuarios";
-  const puedeVerCharts = ["admin", "admin_charts"].includes(user.rol);
-  const puedeVerTramites = ["admin", "admin_tramites"].includes(user.rol);
-  const puedeCrearTramite = user.rol === "admin" || user.rol === "admin_tramites";
-
+  const puedeGestionarAreas = user.rol === "admin";
 
   const totalTramites = tramites.length;
   const pendientes = tramites.filter(t => t.estado === "Pendiente").length;
@@ -144,40 +146,39 @@ const AdminDashboard = () => {
         <DashboardHeader onExportDashboard={handleExportDashboard} />
 
         <div className="tabs-container">
-          {puedeVerCharts && (
-            <button className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
-              Dashboard
-            </button>
-          )}
           {puedeCrearTramite && (
             <button className={`tab-button ${activeTab === "crear" ? "active" : ""}`} onClick={() => setActiveTab("crear")}>
               Crear Trámite
             </button>
           )}
-          
-          <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
-            Tipos de Trámite
-          </button>
           {puedeVerTramites && (
             <button className={`tab-button ${activeTab === "tramites" ? "active" : ""}`} onClick={() => setActiveTab("tramites")}>
               Trámites
             </button>
           )}
-          {puedeGestionarUsuarios && (
-            <>
-              <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>
-                Gestión de Usuarios
-              </button>
-              <button  className={`tab-button ${activeTab === "areas" ? "active" : ""}`}
-                        onClick={() => setActiveTab("areas")}
-                      >
-  Gestión de Áreas
-</button>
-            </>
+          {!esAdminRevisor && puedeVerTiposTramite && (
+            <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
+              Tipos de Trámite
+            </button>
+          )}
+          {!esAdminRevisor && puedeVerCharts && (
+            <button className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              Dashboard
+            </button>
+          )}
+          {!esAdminRevisor && puedeGestionarUsuarios && (
+            <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>
+              Gestión de Usuarios
+            </button>
+          )}
+          {!esAdminRevisor && puedeGestionarAreas && (
+            <button className={`tab-button ${activeTab === "areas" ? "active" : ""}`} onClick={() => setActiveTab("areas")}>
+              Gestión de Áreas
+            </button>
           )}
         </div>
 
-        {activeTab === "dashboard" && puedeVerCharts && (
+        {activeTab === "dashboard" && !esAdminRevisor && puedeVerCharts && (
           <div ref={dashboardRef}>
             <DashboardCards
               total={totalTramites}
@@ -203,7 +204,7 @@ const AdminDashboard = () => {
             campoNuevo={campoNuevo}
             setCampoNuevo={setCampoNuevo}
             campos={campos}
-            setCampos={setCampos} // ✅ Esta línea es la clave
+            setCampos={setCampos}
             handleCrearTramite={handleCrearTramite}
           />
         )}
@@ -238,7 +239,7 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {activeTab === "tipos" && (
+        {activeTab === "tipos" && !esAdminRevisor && (
           <TiposTramiteGrid
             tiposTramite={tiposTramite}
             updateTipoTramite={updateTipoTramite}
@@ -246,8 +247,8 @@ const AdminDashboard = () => {
           />
         )}
 
-        {activeTab === "usuarios" && puedeGestionarUsuarios && <UserManagement />}
-        {activeTab === "areas" && <AreaManagement />}
+        {activeTab === "usuarios" && !esAdminRevisor && puedeGestionarUsuarios && <UserManagement />}
+        {activeTab === "areas" && !esAdminRevisor && puedeGestionarAreas && <AreaManagement />}
       </div>
     </>
   );
