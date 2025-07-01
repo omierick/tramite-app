@@ -24,7 +24,7 @@ const AdminDashboard = () => {
   const updateTipoTramite = tramitesCtx?.updateTipoTramite || (() => {});
   const deleteTipoTramite = tramitesCtx?.deleteTipoTramite || (() => {});
 
-  const [activeTab, setActiveTab] = useState("tramites");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [nombreTramite, setNombreTramite] = useState("");
   const [campoNuevo, setCampoNuevo] = useState("");
   const [campos, setCampos] = useState([]);
@@ -37,23 +37,23 @@ const AdminDashboard = () => {
 
   if (!user) return <div>Cargando usuario...</div>;
 
-  const esAdminRevisor = user.rol === "admin_revisor";
-  const puedeVerCharts = user.rol === "admin" || user.rol === "admin_charts";
-  const puedeVerTramites = ["admin", "admin_tramites", "admin_revisor"].includes(user.rol);
-  const puedeCrearTramite = ["admin", "admin_tramites", "admin_revisor"].includes(user.rol);
-  const puedeVerTiposTramite = ["admin", "admin_tramites"].includes(user.rol);
-  const puedeGestionarUsuarios = user.rol === "admin" || user.rol === "admin_usuarios";
-  const puedeGestionarAreas = user.rol === "admin";
+  const rol = user.rol;
+  const puedeGestionarUsuarios = rol === "admin" || rol === "admin_usuarios";
+  const puedeVerCharts = ["admin", "admin_charts"].includes(rol);
+  const puedeVerTramites = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
+  const puedeCrearTramite = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
+  const puedeVerTiposTramite = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
+  const puedeVerAreas = ["admin", "admin_usuarios"].includes(rol);
 
   const totalTramites = tramites.length;
-  const pendientes = tramites.filter(t => t.estado === "Pendiente").length;
-  const aprobados = tramites.filter(t => t.estado === "Aprobado").length;
-  const rechazados = tramites.filter(t => t.estado === "Rechazado").length;
+  const pendientes = tramites.filter((t) => t.estado === "Pendiente").length;
+  const aprobados = tramites.filter((t) => t.estado === "Aprobado").length;
+  const rechazados = tramites.filter((t) => t.estado === "Rechazado").length;
 
   const promedioTiempo = () => {
     const tiempos = tramites
-      .filter(t => t.reviewedAt)
-      .map(t => (new Date(t.reviewedAt) - new Date(t.createdAt)) / (1000 * 60));
+      .filter((t) => t.reviewedAt)
+      .map((t) => (new Date(t.reviewedAt) - new Date(t.createdAt)) / (1000 * 60));
     if (tiempos.length === 0) return "-";
     const total = tiempos.reduce((a, b) => a + b, 0);
     const promedio = total / tiempos.length;
@@ -62,7 +62,7 @@ const AdminDashboard = () => {
     return `${horas}h ${minutos}m`;
   };
 
-  const tramitesHoy = tramites.filter(t => {
+  const tramitesHoy = tramites.filter((t) => {
     const created = new Date(t.createdAt);
     const now = new Date();
     return created.toDateString() === now.toDateString();
@@ -70,11 +70,9 @@ const AdminDashboard = () => {
 
   const tramitesFiltrados = useMemo(() => {
     let filtrados = [...tramites];
-
     if (filtroEstado !== "todos") {
-      filtrados = filtrados.filter(t => t.estado === filtroEstado);
+      filtrados = filtrados.filter((t) => t.estado === filtroEstado);
     }
-
     if (busqueda.trim() !== "") {
       const termino = busqueda.toLowerCase();
       filtrados = filtrados.filter((t) =>
@@ -83,7 +81,6 @@ const AdminDashboard = () => {
         (t.folio ?? "").toLowerCase().includes(termino)
       );
     }
-
     if (orden === "recientes") {
       filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (orden === "antiguos") {
@@ -91,7 +88,6 @@ const AdminDashboard = () => {
     } else if (orden === "tipo") {
       filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
     }
-
     return filtrados;
   }, [tramites, filtroEstado, busqueda, orden]);
 
@@ -146,9 +142,19 @@ const AdminDashboard = () => {
         <DashboardHeader onExportDashboard={handleExportDashboard} />
 
         <div className="tabs-container">
+          {puedeVerCharts && (
+            <button className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
+              Dashboard
+            </button>
+          )}
           {puedeCrearTramite && (
             <button className={`tab-button ${activeTab === "crear" ? "active" : ""}`} onClick={() => setActiveTab("crear")}>
               Crear Trámite
+            </button>
+          )}
+          {puedeVerTiposTramite && (
+            <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
+              Tipos de Trámite
             </button>
           )}
           {puedeVerTramites && (
@@ -156,29 +162,19 @@ const AdminDashboard = () => {
               Trámites
             </button>
           )}
-          {!esAdminRevisor && puedeVerTiposTramite && (
-            <button className={`tab-button ${activeTab === "tipos" ? "active" : ""}`} onClick={() => setActiveTab("tipos")}>
-              Tipos de Trámite
-            </button>
-          )}
-          {!esAdminRevisor && puedeVerCharts && (
-            <button className={`tab-button ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
-              Dashboard
-            </button>
-          )}
-          {!esAdminRevisor && puedeGestionarUsuarios && (
+          {puedeGestionarUsuarios && (
             <button className={`tab-button ${activeTab === "usuarios" ? "active" : ""}`} onClick={() => setActiveTab("usuarios")}>
               Gestión de Usuarios
             </button>
           )}
-          {!esAdminRevisor && puedeGestionarAreas && (
+          {puedeVerAreas && (
             <button className={`tab-button ${activeTab === "areas" ? "active" : ""}`} onClick={() => setActiveTab("areas")}>
               Gestión de Áreas
             </button>
           )}
         </div>
 
-        {activeTab === "dashboard" && !esAdminRevisor && puedeVerCharts && (
+        {activeTab === "dashboard" && puedeVerCharts && (
           <div ref={dashboardRef}>
             <DashboardCards
               total={totalTramites}
@@ -206,6 +202,14 @@ const AdminDashboard = () => {
             campos={campos}
             setCampos={setCampos}
             handleCrearTramite={handleCrearTramite}
+          />
+        )}
+
+        {activeTab === "tipos" && puedeVerTiposTramite && (
+          <TiposTramiteGrid
+            tiposTramite={tiposTramite}
+            updateTipoTramite={updateTipoTramite}
+            deleteTipoTramite={deleteTipoTramite}
           />
         )}
 
@@ -239,16 +243,8 @@ const AdminDashboard = () => {
           </>
         )}
 
-        {activeTab === "tipos" && !esAdminRevisor && (
-          <TiposTramiteGrid
-            tiposTramite={tiposTramite}
-            updateTipoTramite={updateTipoTramite}
-            deleteTipoTramite={deleteTipoTramite}
-          />
-        )}
-
-        {activeTab === "usuarios" && !esAdminRevisor && puedeGestionarUsuarios && <UserManagement />}
-        {activeTab === "areas" && !esAdminRevisor && puedeGestionarAreas && <AreaManagement />}
+        {activeTab === "usuarios" && puedeGestionarUsuarios && <UserManagement />}
+        {activeTab === "areas" && puedeVerAreas && <AreaManagement />}
       </div>
     </>
   );
