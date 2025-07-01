@@ -31,6 +31,20 @@ select {
   box-sizing: border-box;
 }
 
+/* Input con error */
+.input-error {
+  border: 2px solid #ef4444;
+  background-color: #fff0f0;
+}
+
+/* Mensaje de error */
+.error-message {
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: -0.4rem;
+  margin-bottom: 0.6rem;
+}
+
 .btn-primary {
   background-color: #2563eb;
   color: white;
@@ -163,7 +177,7 @@ thead {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Botones del modal (alineados e iguales) */
+/* Botones del modal */
 .modal-buttons {
   display: flex;
   justify-content: center;

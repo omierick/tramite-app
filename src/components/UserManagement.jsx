@@ -6,23 +6,26 @@ import "./UserManagement.css";
 const UserManagement = () => {
   const { user } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
+  const [rolesDisponibles, setRolesDisponibles] = useState([]);
+  const [areas, setAreas] = useState([]);
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rol, setRol] = useState("revisor");
+  const [rol, setRol] = useState("");
   const [areaId, setAreaId] = useState("");
-  const [areas, setAreas] = useState([]);
   const [filtro, setFiltro] = useState("");
   const [editUser, setEditUser] = useState(null);
   const [editData, setEditData] = useState({ id: null, nombre: "", correo: "", rol: "", password: "", area_id: null });
-  const [itemsPorPagina, setItemsPorPagina] = useState(10);
+  const [itemsPorPagina] = useState(10);
   const [paginaActual, setPaginaActual] = useState(1);
   const [orden, setOrden] = useState({ campo: "id", asc: true });
+  const [errorCorreo, setErrorCorreo] = useState(false);
 
   useEffect(() => {
     fetchUsuarios();
     fetchAreas();
-  }, [user]);
+    fetchRoles();
+  }, []);
 
   const fetchUsuarios = async () => {
     const { data, error } = await supabase.from("usuarios").select("*, areas:area_id (nombre)");
@@ -40,21 +43,46 @@ const UserManagement = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    const { data, error } = await supabase.from("roles").select("id, nombre");
+    if (!error) setRolesDisponibles(data);
+  };
+
   const handleCreate = async () => {
     if (!nombre || !email || !password || !rol) return alert("Faltan datos");
     if (!/\S+@\S+\.\S+/.test(email)) return alert("Correo inválido");
     if (password.length < 6) return alert("Contraseña debe tener al menos 6 caracteres");
+    if (rol === "revisor" && !areaId) return alert("Debes seleccionar un área");
 
     const { data: existente } = await supabase.from("usuarios").select("correo").eq("correo", email).single();
-    if (existente) return alert("Correo ya registrado.");
+    if (existente) return alert("Correo ya registrado");
 
-    const nuevoUsuario = { nombre, correo: email, password, rol, ...(rol === "revisor" && areaId ? { area_id: parseInt(areaId) } : {}) };
+    const nuevoUsuario = {
+      nombre,
+      correo: email,
+      password,
+      rol,
+      ...(rol === "revisor" && areaId ? { area_id: parseInt(areaId) } : {})
+    };
+
     const { error } = await supabase.from("usuarios").insert([nuevoUsuario]);
     if (!error) {
       alert("Usuario creado");
-      setNombre(""); setEmail(""); setPassword(""); setRol("revisor"); setAreaId("");
+      setNombre(""); setEmail(""); setPassword(""); setRol(""); setAreaId("");
       fetchUsuarios();
-    } else alert("Error al crear: " + error.message);
+    }
+  };
+
+  const openEditModal = (usuario) => {
+    setEditUser(usuario.correo);
+    setEditData({
+      id: usuario.id,
+      nombre: usuario.nombre,
+      correo: usuario.correo,
+      rol: usuario.rol,
+      password: "",
+      area_id: usuario.area_id
+    });
   };
 
   const handleEditChange = (e) => {
@@ -62,17 +90,22 @@ const UserManagement = () => {
     setEditData((prev) => ({ ...prev, [name]: name === "area_id" ? parseInt(value) : value }));
   };
 
-  const openEditModal = (usuario) => {
-    setEditUser(usuario.correo);
-    setEditData({ id: usuario.id, nombre: usuario.nombre, correo: usuario.correo, rol: usuario.rol, password: "", area_id: usuario.area_id });
-  };
-
   const handleUpdate = async () => {
     const { nombre, correo, rol, password, area_id } = editData;
     if (!nombre || !correo || !rol) return alert("Faltan datos");
     if (!/\S+@\S+\.\S+/.test(correo)) return alert("Correo inválido");
+    if (rol === "revisor" && !area_id) return alert("Debes seleccionar un área");
 
-    const updateFields = { nombre, correo, rol, area_id: rol === "revisor" ? parseInt(area_id) : null };
+    const existente = await supabase.from("usuarios").select("correo").eq("correo", correo).neq("id", editData.id).single();
+    if (existente.data) return alert("Correo ya registrado por otro usuario");
+
+    const updateFields = {
+      nombre,
+      correo,
+      rol,
+      area_id: rol === "revisor" ? parseInt(area_id) : null,
+    };
+
     if (password?.trim()) {
       if (password.length < 6) return alert("La contraseña debe tener al menos 6 caracteres");
       updateFields.password = password;
@@ -83,29 +116,23 @@ const UserManagement = () => {
       alert("Usuario actualizado");
       setEditUser(null);
       fetchUsuarios();
-    } else alert("Error al actualizar: " + error.message);
+    }
   };
 
   const handleDeleteUser = async (correo) => {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
     const { error } = await supabase.from("usuarios").delete().eq("correo", correo);
     if (!error) fetchUsuarios();
-    else alert("Error al eliminar: " + error.message);
   };
 
-  const usuariosFiltrados = usuarios
-    .filter((u) =>
-      u.nombre.toLowerCase().includes(filtro) ||
-      u.correo.toLowerCase().includes(filtro) ||
-      u.id.toString().includes(filtro)
-    )
-    .sort((a, b) => {
-      const campo = orden.campo;
-      const valorA = a[campo];
-      const valorB = b[campo];
-      if (campo === "id") return orden.asc ? valorA - valorB : valorB - valorA;
-      return orden.asc ? valorA.localeCompare(valorB) : valorB.localeCompare(valorA);
-    });
+  const usuariosFiltrados = usuarios.filter((u) =>
+    u.nombre.toLowerCase().includes(filtro) ||
+    u.correo.toLowerCase().includes(filtro) ||
+    u.id.toString().includes(filtro)
+  ).sort((a, b) => {
+    const campo = orden.campo;
+    return orden.asc ? a[campo]?.localeCompare?.(b[campo]) ?? a[campo] - b[campo] : b[campo]?.localeCompare?.(a[campo]) ?? b[campo] - a[campo];
+  });
 
   const totalPaginas = Math.ceil(usuariosFiltrados.length / itemsPorPagina);
   const usuariosPaginados = usuariosFiltrados.slice((paginaActual - 1) * itemsPorPagina, paginaActual * itemsPorPagina);
@@ -114,7 +141,8 @@ const UserManagement = () => {
     setOrden((prev) => ({ campo, asc: prev.campo === campo ? !prev.asc : true }));
   };
 
-  if (!user || (user.rol !== "admin" && user.rol !== "admin_usuarios")) return <p style={{ textAlign: "center" }}>No tienes permisos para ver esta página.</p>;
+  if (!user || (user.rol !== "admin" && user.rol !== "admin_usuarios"))
+    return <p style={{ textAlign: "center" }}>No tienes permisos para ver esta página.</p>;
 
   return (
     <div className="user-management">
@@ -124,19 +152,16 @@ const UserManagement = () => {
         <input placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input placeholder="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <select value={rol} onChange={(e) => setRol(e.target.value)}>
-          <option value="admin">admin</option>
-          <option value="admin_charts">admin_charts</option>
-          <option value="admin_revisor">admin_revisor</option>
-          <option value="admin_tramites">admin_tramites</option>
-          <option value="admin_usuarios">admin_usuarios</option>
-          <option value="revisor">revisor</option>
-          <option value="usuario">usuario</option>
+          <option value="">Selecciona un rol</option>
+          {rolesDisponibles.map((r) => (
+            <option key={r.id} value={r.nombre}>{r.nombre}</option>
+          ))}
         </select>
         {rol === "revisor" && (
           <select value={areaId} onChange={(e) => setAreaId(e.target.value)}>
             <option value="">Selecciona un área</option>
-            {areas.map((area) => (
-              <option key={area.id} value={area.id}>{area.nombre}</option>
+            {areas.map((a) => (
+              <option key={a.id} value={a.id}>{a.nombre}</option>
             ))}
           </select>
         )}
@@ -144,42 +169,35 @@ const UserManagement = () => {
       </div>
 
       <h2>Usuarios Registrados</h2>
-      <input
-        placeholder="Buscar por ID, nombre o correo"
-        value={filtro}
-        onChange={(e) => { setFiltro(e.target.value.toLowerCase()); setPaginaActual(1); }}
-        style={{ marginBottom: "1rem", padding: "0.5rem" }}
-      />
+      <input placeholder="Buscar por ID, nombre o correo" value={filtro} onChange={(e) => setFiltro(e.target.value.toLowerCase())} />
 
-      <div className="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th onClick={() => cambiarOrden("id")}>ID</th>
-              <th onClick={() => cambiarOrden("nombre")}>Nombre</th>
-              <th onClick={() => cambiarOrden("correo")}>Correo</th>
-              <th onClick={() => cambiarOrden("rol")}>Rol</th>
-              <th>Área</th>
-              <th>Acciones</th>
+      <table>
+        <thead>
+          <tr>
+            <th onClick={() => cambiarOrden("id")}>ID</th>
+            <th onClick={() => cambiarOrden("nombre")}>Nombre</th>
+            <th onClick={() => cambiarOrden("correo")}>Correo</th>
+            <th onClick={() => cambiarOrden("rol")}>Rol</th>
+            <th>Área</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {usuariosPaginados.map((u) => (
+            <tr key={u.correo}>
+              <td>{u.id}</td>
+              <td>{u.nombre}</td>
+              <td>{u.correo}</td>
+              <td>{u.rol}</td>
+              <td>{u.area_nombre}</td>
+              <td>
+                <button className="btn-edit" onClick={() => openEditModal(u)}>Editar</button>
+                <button className="btn-danger" onClick={() => handleDeleteUser(u.correo)}>Eliminar</button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {usuariosPaginados.map((u) => (
-              <tr key={u.correo}>
-                <td>{u.id}</td>
-                <td>{u.nombre}</td>
-                <td>{u.correo}</td>
-                <td>{u.rol}</td>
-                <td>{u.area_nombre}</td>
-                <td className="user-actions">
-                  <button className="btn-edit" onClick={() => openEditModal(u)}>Editar</button>
-                  <button className="btn-danger" onClick={() => handleDeleteUser(u.correo)}>Eliminar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
 
       <div className="pagination-controls">
         <button onClick={() => setPaginaActual((p) => Math.max(1, p - 1))} disabled={paginaActual === 1}>{"<"}</button>
@@ -189,7 +207,7 @@ const UserManagement = () => {
         <button onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas}>{">"}</button>
       </div>
 
-       {editUser && (
+      {editUser && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Editar Usuario</h3>
@@ -198,18 +216,16 @@ const UserManagement = () => {
             <input name="correo" value={editData.correo} onChange={handleEditChange} />
             <input name="password" type="password" placeholder="Nueva contraseña (opcional)" value={editData.password} onChange={handleEditChange} />
             <select name="rol" value={editData.rol} onChange={handleEditChange}>
-              <option value="revisor">revisor</option>
-              <option value="admin">admin</option>
-              <option value="admin_tramites">admin_tramites</option>
-              <option value="admin_usuarios">admin_usuarios</option>
-              <option value="admin_charts">admin_charts</option>
-              <option value="usuario">usuario</option>
+              <option value="">Selecciona un rol</option>
+              {rolesDisponibles.map((r) => (
+                <option key={r.id} value={r.nombre}>{r.nombre}</option>
+              ))}
             </select>
             {editData.rol === "revisor" && (
               <select name="area_id" value={editData.area_id || ""} onChange={handleEditChange}>
                 <option value="">Selecciona un área</option>
-                {areas.map((area) => (
-                  <option key={area.id} value={area.id}>{area.nombre}</option>
+                {areas.map((a) => (
+                  <option key={a.id} value={a.id}>{a.nombre}</option>
                 ))}
               </select>
             )}

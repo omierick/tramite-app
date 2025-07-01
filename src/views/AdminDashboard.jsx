@@ -10,6 +10,7 @@ import TramitesTable from "./AdminDashboard/TramitesTable";
 import TiposTramiteGrid from "./AdminDashboard/TiposTramiteGrid";
 import UserManagement from "../components/UserManagement";
 import AreaManagement from "../components/AreaManagement";
+import RoleManagement from "../components/RoleManagement"; // ✅ Nuevo
 import { useAuth } from "../context/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -44,6 +45,7 @@ const AdminDashboard = () => {
   const puedeCrearTramite = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
   const puedeVerTiposTramite = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
   const puedeVerAreas = ["admin", "admin_usuarios"].includes(rol);
+  const puedeVerRoles = ["admin", "admin_usuarios"].includes(rol); // ✅ Nuevo permiso
 
   const totalTramites = tramites.length;
   const pendientes = tramites.filter((t) => t.estado === "Pendiente").length;
@@ -172,6 +174,11 @@ const AdminDashboard = () => {
               Gestión de Áreas
             </button>
           )}
+          {puedeVerRoles && (
+            <button className={`tab-button ${activeTab === "roles" ? "active" : ""}`} onClick={() => setActiveTab("roles")}>
+              Gestión de Roles
+            </button>
+          )}
         </div>
 
         {activeTab === "dashboard" && puedeVerCharts && (
@@ -245,6 +252,7 @@ const AdminDashboard = () => {
 
         {activeTab === "usuarios" && puedeGestionarUsuarios && <UserManagement />}
         {activeTab === "areas" && puedeVerAreas && <AreaManagement />}
+        {activeTab === "roles" && puedeVerRoles && <RoleManagement />}
       </div>
     </>
   );

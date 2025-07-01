@@ -9,235 +9,233 @@ export const generatePDF = (tramite) => {
   const campos = tramite.campos || {};
   const firma = tramite.firma;
 
-    if (tramite.tipo === "Omiwave Desarrollo Humano") {
+  if (tramite.tipo === "Omiwave Desarrollo Humano") {
+    // --- Encabezado ---
+    const agregarEncabezado = () => {
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.addImage(logoAyuntamiento, "PNG", 10, 8, 40, 20);
+      doc.addImage(logoNR, "PNG", pageWidth - 50, 8, 40, 20);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("OMIWAVE DESARROLLO HUMANO", pageWidth / 2, 32, { align: "center" });
+    };
 
-  const agregarEncabezado = () => {
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.addImage(logoAyuntamiento, "PNG", 10, 8, 40, 20);
-    doc.addImage(logoNR, "PNG", pageWidth - 50, 8, 40, 20);
-    doc.setFontSize(14);
+    // --- Checkbox ---
+    const dibujarCheckbox = (x, y, label, checked) => {
+      doc.setDrawColor(0);
+      doc.rect(x, y, 4, 4);
+      if (checked) doc.text("X", x + 1, y + 3.2);
+      doc.text(label, x + 6, y + 3.2);
+    };
+
+    const checkFields = [
+      "Alineamiento", "Cédula Informativa de Zonificación", "Prórroga de Licencia",
+      "Ampliación de Construcción", "Obra Extemporánea", "Excavación o Relleno",
+      "Incremento de Altura", "Suspensión de Obra", "Número Oficial",
+      "Demolición Total o Parcial", "Muro de Contención", "Cambio de Uso de Suelo",
+      "Modificación de Proyecto", "Término de Obra", "Obra Nueva",
+      "Rotura de Pavimento", "Estructura para Anuncios", "Barda",
+      "Marquesina", "Instalación de Antenas", "Radiotelecomunicaciones",
+      "Incremento de Densidad"
+    ];
+
+    let y = 38;
+    agregarEncabezado();
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
-    doc.text("OMIWAVE DESARROLLO HUMANO", pageWidth / 2, 32, { align: "center" });
-  };
+    doc.text("TIPO DE TRÁMITE", 15, y);
+    y += 5;
 
-  const dibujarCheckbox = (x, y, label, checked) => {
-    doc.setDrawColor(0);
-    doc.rect(x, y, 4, 4);
-    if (checked) doc.text("X", x + 1, y + 3.2);
-    doc.text(label, x + 6, y + 3.2);
-  };
+    const cols = [15, 85, 155];
+    const rowHeight = 6;
+    checkFields.forEach((field, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const value = !!campos[field] && campos[field] !== "false";
+      dibujarCheckbox(cols[col], y + row * rowHeight, field, value);
+    });
 
-  const checkFields = [
-    "Alineamiento", "Cédula Informativa de Zonificación", "Prórroga de Licencia",
-    "Ampliación de Construcción", "Obra Extemporánea", "Excavación o Relleno",
-    "Incremento de Altura", "Suspensión de Obra", "Número Oficial",
-    "Demolición Total o Parcial", "Muro de Contención", "Cambio de Uso de Suelo",
-    "Modificación de Proyecto", "Término de Obra", "Obra Nueva",
-    "Rotura de Pavimento", "Estructura para Anuncios", "Barda",
-    "Marquesina", "Instalación de Antenas", "Radiotelecomunicaciones",
-    "Incremento de Densidad"
-  ];
+    y += Math.ceil(checkFields.length / 3) * rowHeight + 10;
 
-  let y = 38;
-  agregarEncabezado();
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.text("TIPO DE TRÁMITE", 15, y);
-  y += 5;
+    // --- Tabla utilitaria ---
+    const crearTabla = (titulo, datos) => {
+      autoTable(doc, {
+        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y,
+        head: [[{ content: titulo, colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }]],
+        body: datos.map(([label, valor]) => [label, valor || ""]),
+        theme: 'grid',
+        styles: { fontSize: 9, cellPadding: 1.5 },
+        columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 100 } },
+        margin: { left: 15, right: 15 }
+      });
+    };
 
-  const cols = [15, 85, 155];
-  const rowHeight = 6;
-  checkFields.forEach((field, i) => {
-    const col = i % 3;
-    const row = Math.floor(i / 3);
-    const value = !!campos[field] && campos[field] !== "false";
-    dibujarCheckbox(cols[col], y + row * rowHeight, field, value);
-  });
-
-  y += Math.ceil(checkFields.length / 3) * rowHeight + 10;
-  const crearTabla = (titulo, datos) => {
+    // --- Folio del trámite ---
     autoTable(doc, {
-      startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y,
-      head: [[{ content: titulo, colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }]],
-      body: datos.map(([label, valor]) => [label, valor || ""]),
+      startY: y,
+      head: [[
+        { content: "FOLIO DEL TRÁMITE", colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }
+      ]],
+      body: [["Folio:", tramite.folio || tramite.id || campos["Expediente"] || ""]],
       theme: 'grid',
       styles: { fontSize: 9, cellPadding: 1.5 },
       columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 100 } },
       margin: { left: 15, right: 15 }
     });
-  };
-// Mostrar Folio del trámite después de los checkboxes
-autoTable(doc, {
-  startY: y,
-  head: [[
-    { content: "FOLIO DEL TRÁMITE", colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }
-  ]],
-  body: [["Folio:", tramite.folio || tramite.id || campos["Expediente"] || ""]],
-  theme: 'grid',
-  styles: { fontSize: 9, cellPadding: 1.5 },
-  columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 100 } },
-  margin: { left: 15, right: 15 }
-});
 
-y = doc.lastAutoTable.finalY + 10;
-  crearTabla("DATOS DEL INMUEBLE", [
-    ["Propietario:", campos["Propietario"]],
-    ["Representante Legal:", campos["Representante Legal"]],
-    ["Calle:", campos["Calle"]],
-    ["Número:", campos["Número"]],
-    ["Manzana:", campos["Manzana"]],
-    ["Lote:", campos["Lote"]],
-    ["Colonia o Fraccionamiento:", campos["Pueblo, Colonia o Fraccionamiento"]],
-    ["Clave Catastral:", campos["Clave Catastral"]],
-    ["Superficie del Predio:", campos["Superficie del Predio"]],
-    ["Superficie Construida:", campos["Superficie Construida"]],
-    ["Superficie Prevista:", campos["Superficie Prevista"]],
-    ["Uso del Suelo Actual:", campos["Uso del Suelo Actual"]],
-    ["Uso del Suelo que se Pretende:", campos["Uso del Suelo que se Pretende"]]
-  ]);
+    y = doc.lastAutoTable.finalY + 10;
 
-  crearTabla("DOMICILIO PARA RECIBIR NOTIFICACIONES EN NICOLÁS ROMERO", [
-    ["Calle:", campos["Calle (Notificaciones)"]],
-    ["Número:", campos["Número (Notificaciones)"]],
-    ["Manzana:", campos["Manzana (Notificaciones)"]],
-    ["Lote:", campos["Lote (Notificaciones)"]],
-    ["Colonia:", campos["Colonia (Notificaciones)"]],
-    ["Código Postal:", campos["Código Postal"]],
-    ["Correo Electrónico:", campos["Correo Electrónico"]],
-    ["Teléfono:", campos["Teléfono"]]
-  ]);
+    // --- Tablas principales ---
+    crearTabla("DATOS DEL INMUEBLE", [
+      ["Propietario:", campos["Propietario"]],
+      ["Representante Legal:", campos["Representante Legal"]],
+      ["Calle:", campos["Calle"]],
+      ["Número:", campos["Número"]],
+      ["Manzana:", campos["Manzana"]],
+      ["Lote:", campos["Lote"]],
+      ["Colonia o Fraccionamiento:", campos["Pueblo, Colonia o Fraccionamiento"]],
+      ["Clave Catastral:", campos["Clave Catastral"]],
+      ["Superficie del Predio:", campos["Superficie del Predio"]],
+      ["Superficie Construida:", campos["Superficie Construida"]],
+      ["Superficie Prevista:", campos["Superficie Prevista"]],
+      ["Uso del Suelo Actual:", campos["Uso del Suelo Actual"]],
+      ["Uso del Suelo que se Pretende:", campos["Uso del Suelo que se Pretende"]]
+    ]);
 
-  crearTabla("DATOS FISCALES", [
-    ["Nombre o Razón Social:", campos["Nombre o Razón Social"]],
-    ["RFC:", campos["RFC"]],
-    ["Correo Fiscal:", campos["Correo Fiscal"]],
-    ["Domicilio Fiscal:", campos["Domicilio Fiscal"]]
-  ]);
+    crearTabla("DOMICILIO PARA RECIBIR NOTIFICACIONES EN NICOLÁS ROMERO", [
+      ["Calle:", campos["Calle (Notificaciones)"]],
+      ["Número:", campos["Número (Notificaciones)"]],
+      ["Manzana:", campos["Manzana (Notificaciones)"]],
+      ["Lote:", campos["Lote (Notificaciones)"]],
+      ["Colonia:", campos["Colonia (Notificaciones)"]],
+      ["Código Postal:", campos["Código Postal"]],
+      ["Correo Electrónico:", campos["Correo Electrónico"]],
+      ["Teléfono:", campos["Teléfono"]]
+    ]);
 
-  const croquisBody = [
-  ["Coordenadas UTM:", campos["Coordenadas UTM"] || ""]
-];
+    crearTabla("DATOS FISCALES", [
+      ["Nombre o Razón Social:", campos["Nombre o Razón Social"]],
+      ["RFC:", campos["RFC"]],
+      ["Correo Fiscal:", campos["Correo Fiscal"]],
+      ["Domicilio Fiscal:", campos["Domicilio Fiscal"]]
+    ]);
 
-if (tramite.croquis && tramite.croquis.startsWith("data:image/")) {
-  croquisBody.push([
-    "Croquis:",
-    { content: "", rowSpan: 1 }
-  ]);
-}
-
-autoTable(doc, {
-  startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y,
-  head: [[
-    { content: "CROQUIS DE LOCALIZACIÓN", colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }
-  ]],
-  body: croquisBody,
-  theme: 'grid',
-  styles: { fontSize: 9, cellPadding: 2, valign: 'middle' },
-  columnStyles: {
-    0: { cellWidth: 60 },
-    1: { cellWidth: 100 }
-  },
-  margin: { left: 15, right: 15 },
-  didDrawCell: (data) => {
-    if (
-      data.column.index === 1 &&
-      data.row.raw[0] === "Croquis:" &&
-      tramite.croquis
-    ) {
-      const x = data.cell.x + 2;
-      const y = data.cell.y + 2;
-      const imgWidth = 96;
-      const imgHeight = 60;
-      doc.addImage(tramite.croquis, "PNG", x, y, imgWidth, imgHeight);
+    // --- Croquis ---
+    const croquisBody = [
+      ["Coordenadas UTM:", campos["Coordenadas UTM"] || ""]
+    ];
+    if (tramite.croquis && tramite.croquis.startsWith("data:image/")) {
+      croquisBody.push([
+        "Croquis:",
+        { content: "", rowSpan: 1 }
+      ]);
     }
-  },
-  didParseCell: (data) => {
-    if (
-      data.row.raw[0] === "Croquis:" &&
-      data.column.index === 1
-    ) {
-      data.cell.styles.minCellHeight = 64;
+    autoTable(doc, {
+      startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y,
+      head: [[
+        { content: "CROQUIS DE LOCALIZACIÓN", colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }
+      ]],
+      body: croquisBody,
+      theme: 'grid',
+      styles: { fontSize: 9, cellPadding: 2, valign: 'middle' },
+      columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 100 } },
+      margin: { left: 15, right: 15 },
+      didDrawCell: (data) => {
+        if (
+          data.column.index === 1 &&
+          data.row.raw[0] === "Croquis:" &&
+          tramite.croquis
+        ) {
+          const x = data.cell.x + 2;
+          const y = data.cell.y + 2;
+          const imgWidth = 96;
+          const imgHeight = 60;
+          doc.addImage(tramite.croquis, "PNG", x, y, imgWidth, imgHeight);
+        }
+      },
+      didParseCell: (data) => {
+        if (
+          data.row.raw[0] === "Croquis:" &&
+          data.column.index === 1
+        ) {
+          data.cell.styles.minCellHeight = 64;
+        }
+      }
+    });
+
+    crearTabla("DATOS DEL DIRECTOR RESPONSABLE DE OBRA", [
+      ["Nombre del D.R.O.:", campos["Nombre del D.R.O."]],
+      ["Domicilio del D.R.O.:", campos["Domicilio del D.R.O."]],
+      ["Registro del D.R.O.:", campos["Registro del D.R.O."]],
+      ["Cédula Profesional:", campos["Cédula Profesional"]],
+      ["Teléfono del D.R.O.:", campos["Teléfono del D.R.O."]]
+    ]);
+
+    crearTabla("FIRMAS", [
+      ["Expediente:", campos["Expediente"]],
+      ["Fecha:", campos["Fecha"]],
+      ["Lugar:", campos["Lugar"]]
+    ]);
+
+    // --- Firmas finales ---
+    let firmaInicioY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 40 : y + 40;
+    const firmaAncho = 50;
+
+    if (firma) {
+      doc.addImage(firma, "PNG", 15, firmaInicioY, 40, 20); // Firma a la izquierda
+      firmaInicioY += 28;
     }
-  }
-});
 
+    const firmas = [
+      { x: 15, label: "FIRMA DEL SOLICITANTE" },
+      { x: 83, label: "FIRMA DE QUIEN RECIBE EN VENTANILLA" },
+      { x: 150, label: "FIRMA DEL D.R.O." }
+    ];
 
-  crearTabla("DATOS DEL DIRECTOR RESPONSABLE DE OBRA", [
-    ["Nombre del D.R.O.:", campos["Nombre del D.R.O."]],
-    ["Domicilio del D.R.O.:", campos["Domicilio del D.R.O."]],
-    ["Registro del D.R.O.:", campos["Registro del D.R.O."]],
-    ["Cédula Profesional:", campos["Cédula Profesional"]],
-    ["Teléfono del D.R.O.:", campos["Teléfono del D.R.O."]]
-  ]);
+    firmas.forEach(({ x, label }) => {
+      doc.line(x, firmaInicioY, x + firmaAncho, firmaInicioY);
+      doc.setFontSize(9);
+      doc.text(label, x + firmaAncho / 2, firmaInicioY + 5, { align: "center" });
+    });
 
-  crearTabla("FIRMAS", [
-    ["Expediente:", campos["Expediente"]],
-    ["Fecha:", campos["Fecha"]],
-    ["Lugar:", campos["Lugar"]]
-  ]);
-  // === PÁGINA 1: Firmas finales ===
-  // Aseguramos que haya espacio suficiente debajo de la tabla anterior
-let firmaInicioY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 40 : y + 40;
-const firmaAltura = 25;
-const firmaAncho = 50;
+    // --- Página 2: Instrucciones ---
+    doc.addPage([216, 330]);
+    doc.addImage(instruccionesImg, "JPEG", 0, 0, 216, 330);
 
-if (firma) {
-  doc.addImage(firma, "PNG", 15, firmaInicioY, 40, 20); // Firma a la izquierda
-  firmaInicioY += 28; // Añadir espacio vertical tras la firma
-}
+    // --- Página 3: Aviso de privacidad ---
+    doc.addPage([216, 330]);
+    const avisoX = 15;
+    const avisoY = 30;
+    const avisoW = 186;
+    const avisoH = 100;
 
-// Dibujar líneas de firma y etiquetas más abajo
-const firmas = [
-  { x: 15, label: "FIRMA DEL SOLICITANTE" },
-  { x: 83, label: "FIRMA DE QUIEN RECIBE EN VENTANILLA" },
-  { x: 150, label: "FIRMA DEL D.R.O." }
-];
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.3);
+    doc.rect(avisoX, avisoY, avisoW, avisoH);
 
-firmas.forEach(({ x, label }) => {
-  doc.line(x, firmaInicioY, x + firmaAncho, firmaInicioY); // Línea para firma
-  doc.setFontSize(9);
-  doc.text(label, x + firmaAncho / 2, firmaInicioY + 5, { align: "center" });
-});
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("SEÑAL DE AVISO", avisoX + avisoW / 2, avisoY + 6, { align: "center" });
 
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    const avisoTexto = `El ayuntamiento de Nicolás Romero es el responsable de la protección y tratamiento de los datos personales que usted proporcione en la Dirección de área de Desarrollo Urbano. Los datos recabados serán protegidos conforme a lo dispuesto a la Ley de Protección de datos personales en posesión de sujetos obligados del Estado de México y Municipios (LPDPPSOEMYM) y demás disposiciones aplicables. Sus datos personales serán usados con las siguientes finalidades: Dar trámite y seguimiento a las solicitudes que ingresan, tener control de los expedientes, para consulta y verificación de estatus, cuando proceda a expedir las licencias, autorizaciones, constancias, permisos o cédulas según la solicitud realizada por el contribuyente, realizar las notificaciones que correspondan y generar información estadística. Usted puede conocer el aviso de privacidad integral en las oficinas de la Dirección de Área de Desarrollo Urbano, en la Unidad de Transparencia Municipal y en la página web del Ayuntamiento.\n\nHe leído el aviso de privacidad integral y acepto los términos.`;
 
-  // === PÁGINA 2: Imagen de instrucciones completa ===
-  doc.addPage([216, 330]);
-  doc.addImage(instruccionesImg, "JPEG", 0, 0, 216, 330);
+    const avisoLineas = doc.splitTextToSize(avisoTexto, avisoW - 10);
+    doc.text(avisoLineas, avisoX + 5, avisoY + 12);
 
-  // === PÁGINA 3: Aviso de privacidad ===
-  doc.addPage([216, 330]);
+    const firmaAvisoY = avisoY + avisoH - 10;
+    const firmaAvisoX1 = avisoX + 40;
+    const firmaAvisoX2 = avisoX + avisoW - 40;
+    doc.line(firmaAvisoX1, firmaAvisoY, firmaAvisoX2, firmaAvisoY);
+    doc.setFontSize(8);
+    doc.text("Nombre y firma", (firmaAvisoX1 + firmaAvisoX2) / 2, firmaAvisoY + 5, { align: "center" });
 
-  const avisoX = 15;
-  const avisoY = 30;
-  const avisoW = 186;
-  const avisoH = 100;
+    // --- Guardar PDF ---
+    doc.save("Omiwave_Desarrollo_Humano.pdf");
 
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.3);
-  doc.rect(avisoX, avisoY, avisoW, avisoH);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("SEÑAL DE AVISO", avisoX + avisoW / 2, avisoY + 6, { align: "center" });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  const avisoTexto = `El ayuntamiento de Nicolás Romero es el responsable de la protección y tratamiento de los datos personales que usted proporcione en la Dirección de área de Desarrollo Urbano. Los datos recabados serán protegidos conforme a lo dispuesto a la Ley de Protección de datos personales en posesión de sujetos obligados del Estado de México y Municipios (LPDPPSOEMYM) y demás disposiciones aplicables. Sus datos personales serán usados con las siguientes finalidades: Dar trámite y seguimiento a las solicitudes que ingresan, tener control de los expedientes, para consulta y verificación de estatus, cuando proceda a expedir las licencias, autorizaciones, constancias, permisos o cédulas según la solicitud realizada por el contribuyente, realizar las notificaciones que correspondan y generar información estadística. Usted puede conocer el aviso de privacidad integral en las oficinas de la Dirección de Área de Desarrollo Urbano, en la Unidad de Transparencia Municipal y en la página web del Ayuntamiento.\n\nHe leído el aviso de privacidad integral y acepto los términos.`;
-
-  const avisoLineas = doc.splitTextToSize(avisoTexto, avisoW - 10);
-  doc.text(avisoLineas, avisoX + 5, avisoY + 12);
-
-  const firmaAvisoY = avisoY + avisoH - 10;
-  const firmaAvisoX1 = avisoX + 40;
-  const firmaAvisoX2 = avisoX + avisoW - 40;
-  doc.line(firmaAvisoX1, firmaAvisoY, firmaAvisoX2, firmaAvisoY);
-  doc.setFontSize(8);
-  doc.text("Nombre y firma", (firmaAvisoX1 + firmaAvisoX2) / 2, firmaAvisoY + 5, { align: "center" });
-
-  // === Finalizar ===
-  doc.save("Omiwave_Desarrollo_Humano.pdf");
-
- } else {
+  } else {
+    // --- Para otros trámites: html2pdf.js ---
     import("html2pdf.js").then((html2pdf) => {
       const element = document.createElement("div");
       const fechaActual = new Date().toLocaleString();
@@ -253,10 +251,19 @@ firmas.forEach(({ x, label }) => {
       const firmaHTML =
         firma && firma.startsWith("data:image/")
           ? `
-        <div class="firma">
+        <div class="firma" style="break-inside: avoid; page-break-inside: avoid;">
           <h2>Firma del Solicitante</h2>
           <img src="${firma}" alt="Firma" style="max-width: 300px; max-height: 150px;" />
         </div>`
+          : "";
+
+      const croquisHTML =
+        tramite.croquis && tramite.croquis.startsWith("data:image/")
+          ? `
+          <div class="croquis" style="page-break-before: always; break-inside: avoid;">
+            <h2>Croquis de Localización</h2>
+            <img src="${tramite.croquis}" alt="Croquis" style="max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 10px;" />
+          </div>`
           : "";
 
       const logoPath =
@@ -275,7 +282,7 @@ firmas.forEach(({ x, label }) => {
           th, td { padding: 8px; border: 1px solid #ccc; vertical-align: top; }
           th { background-color: #f0f4f8; text-align: left; }
           h1, h2, h3 { margin: 10px 0; page-break-after: avoid; }
-          .firma { text-align: center; margin-top: 50px; page-break-before: auto; }
+          .firma, .croquis { text-align: center; margin-top: 50px; page-break-before: auto; }
           .footer { font-size: 12px; color: #6b7280; text-align: center; margin-top: 60px; }
           tr { break-inside: avoid; }
         </style>
@@ -309,6 +316,7 @@ firmas.forEach(({ x, label }) => {
           <h3>Campos adicionales</h3>
           <table>${camposHTML}</table>
 
+          ${croquisHTML}
           ${firmaHTML}
 
           <div class="footer">
