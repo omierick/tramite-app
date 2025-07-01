@@ -114,9 +114,53 @@ y = doc.lastAutoTable.finalY + 10;
     ["Domicilio Fiscal:", campos["Domicilio Fiscal"]]
   ]);
 
-  crearTabla("CROQUIS DE LOCALIZACIÓN", [
-    ["Coordenadas UTM:", campos["Coordenadas UTM"]]
+  const croquisBody = [
+  ["Coordenadas UTM:", campos["Coordenadas UTM"] || ""]
+];
+
+if (tramite.croquis && tramite.croquis.startsWith("data:image/")) {
+  croquisBody.push([
+    "Croquis:",
+    { content: "", rowSpan: 1 }
   ]);
+}
+
+autoTable(doc, {
+  startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : y,
+  head: [[
+    { content: "CROQUIS DE LOCALIZACIÓN", colSpan: 2, styles: { halign: 'center', fillColor: [0, 82, 204], textColor: 255 } }
+  ]],
+  body: croquisBody,
+  theme: 'grid',
+  styles: { fontSize: 9, cellPadding: 2, valign: 'middle' },
+  columnStyles: {
+    0: { cellWidth: 60 },
+    1: { cellWidth: 100 }
+  },
+  margin: { left: 15, right: 15 },
+  didDrawCell: (data) => {
+    if (
+      data.column.index === 1 &&
+      data.row.raw[0] === "Croquis:" &&
+      tramite.croquis
+    ) {
+      const x = data.cell.x + 2;
+      const y = data.cell.y + 2;
+      const imgWidth = 96;
+      const imgHeight = 60;
+      doc.addImage(tramite.croquis, "PNG", x, y, imgWidth, imgHeight);
+    }
+  },
+  didParseCell: (data) => {
+    if (
+      data.row.raw[0] === "Croquis:" &&
+      data.column.index === 1
+    ) {
+      data.cell.styles.minCellHeight = 64;
+    }
+  }
+});
+
 
   crearTabla("DATOS DEL DIRECTOR RESPONSABLE DE OBRA", [
     ["Nombre del D.R.O.:", campos["Nombre del D.R.O."]],

@@ -4,12 +4,15 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    // Intentar cargar el usuario desde localStorage
-    const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
   });
 
-  // Guardar el usuario en localStorage cuando cambia
+  // Guardar el usuario en localStorage al cambiar
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
@@ -18,8 +21,24 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const login = (userData) => setUser(userData);
-  const logout = () => setUser(null);
+  const login = (userData) => {
+    // Aseguramos que tenga los datos clave
+    const email = userData.email || userData.correo || "";
+    const nombre = userData.nombre || userData.user_metadata?.nombre || "";
+    const rol = userData.rol || userData.user_metadata?.rol || "";
+
+    setUser({
+      email,
+      nombre,
+      rol,
+      ...userData,
+    });
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>

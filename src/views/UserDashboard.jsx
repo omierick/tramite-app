@@ -1,3 +1,4 @@
+
 import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -6,6 +7,7 @@ import { useTramites } from "../context/TramitesContext";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import FirmaCanvas from "../components/FirmaCanvas";
+import CroquisCanvas from "../components/CroquisCanvas";
 import { toast } from "react-toastify";
 import { generatePDF } from "../utils/pdfUtils";
 import { sendTramiteEmail } from "../services/emailService";
@@ -44,6 +46,7 @@ const UserDashboard = ({ setRole }) => {
   const [formData, setFormData] = useState({});
   const [firma, setFirma] = useState(null);
   const [editandoTramite, setEditandoTramite] = useState(null);
+  const [croquis, setCroquis] = useState(null);
 
   const {
     register,
@@ -91,21 +94,25 @@ const UserDashboard = ({ setRole }) => {
         campos: formData,
         estado: "Pendiente",
         firma,
+        croquis,
       });
+
       toast.success("¡Trámite corregido! Se enviará nuevamente a revisión.");
       setEditandoTramite(null);
     } else {
       const nuevoTramite = {
         tipo: selectedTipo.nombre,
-        tipo_tramite_id: selectedTipo.id, // <-- ESTA LÍNEA AGREGA LA RELACIÓN CON EL ÁREA
+        tipo_tramite_id: selectedTipo.id,
         campos: formData,
         firma,
+        croquis,
         logo_url: selectedTipo?.logo_url || null,
         estado: "Pendiente",
         solicitante: user.correo,
         email,
         createdAt: new Date().toISOString(),
       };
+
       await addTramite(nuevoTramite);
       await sendTramiteEmail(nuevoTramite);
       toast.success("¡Trámite enviado correctamente!");
@@ -173,7 +180,7 @@ const UserDashboard = ({ setRole }) => {
       <div className="user-container">
         <h2>Mis Trámites</h2>
 
-        {editandoTramite || selectedTipo ? (
+        {(editandoTramite || selectedTipo) ? (
           <form className="tramite-form" onSubmit={handleSubmit(onSubmit)}>
             <h3>
               {editandoTramite
@@ -182,9 +189,9 @@ const UserDashboard = ({ setRole }) => {
             </h3>
 
             {selectedTipo.campos.map((campo, idx) => {
-              if (typeof campo !== "object" || !campo.nombre || !campo.tipo)
-                return null;
+              if (typeof campo !== "object" || !campo.nombre || !campo.tipo) return null;
               const value = formData[campo.nombre];
+
               return (
                 <div key={idx} className="form-group">
                   <label>{campo.nombre}:</label>
@@ -212,6 +219,14 @@ const UserDashboard = ({ setRole }) => {
                       value={value || ""}
                       onChange={(e) => handleChange(e, campo.nombre)}
                     />
+                  )}
+
+                  {["coordenadas utm", "coordenadas","coordenada", "croquis"].includes(
+                    campo.nombre.toLowerCase()
+                  ) && (
+                    <div style={{ marginTop: "1rem" }}>
+                      <CroquisCanvas onSave={setCroquis} />
+                    </div>
                   )}
                 </div>
               );

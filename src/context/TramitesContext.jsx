@@ -12,24 +12,40 @@ export const TramitesProvider = ({ children }) => {
   const [nombreUsuario, setNombreUsuario] = useState("");
   const [rolUsuario, setRolUsuario] = useState("");
 
+  // ✅ Recupera los datos del usuario al cargar la app desde localStorage
   useEffect(() => {
-    fetchTramites();
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      setCorreoUsuario(user.correo);
+      setNombreUsuario(user.nombre);
+      setRolUsuario(user.rol);
+    }
+  }, []);
+
+  // ✅ Carga los trámites cuando se tiene el correo del usuario
+  useEffect(() => {
+    if (correoUsuario) {
+      fetchTramites();
+    }
+  }, [correoUsuario]);
+
+  // ✅ Carga los tipos de trámite siempre
+  useEffect(() => {
     fetchTiposTramite();
   }, []);
 
   const fetchTramites = async () => {
     const { data, error } = await supabase
       .from("tramites")
-      .select(
-        `
-  *,
-  tipo_tramite:tipo_tramite_id (
-    id,
-    nombre,
-    area_id
-  )
-`
-      )
+      .select(`
+        *,
+        tipo_tramite:tipo_tramite_id (
+          id,
+          nombre,
+          area_id
+        )
+      `)
       .order("createdAt", { ascending: false });
 
     if (error) {
@@ -51,7 +67,7 @@ export const TramitesProvider = ({ children }) => {
 
     const tiposConArea = data.map((t) => ({
       ...t,
-      area_nombre: t.areas?.nombre || "", // <- importante para mostrar el área
+      area_nombre: t.areas?.nombre || "",
     }));
 
     setTiposTramite(tiposConArea);
@@ -67,11 +83,10 @@ export const TramitesProvider = ({ children }) => {
     return { data, error };
   };
 
-  // ✅ AQUÍ: función addTramite corregida
   const addTramite = async (nuevoTramite) => {
     const { data, error } = await supabase
       .from("tramites")
-      .insert([nuevoTramite]) // Usa el objeto completo con email, etc.
+      .insert([nuevoTramite])
       .select();
 
     if (error) {
@@ -104,7 +119,6 @@ export const TramitesProvider = ({ children }) => {
       reviewedAt: new Date().toISOString(),
     };
 
-    // Guarda comentario si existe
     if (comentario) {
       camposActualizados.comentario_revisor = comentario;
     }
@@ -181,10 +195,10 @@ export const TramitesProvider = ({ children }) => {
         tiposTramite,
         nombreUsuario,
         rolUsuario,
-        correoUsuario, // ✅
+        correoUsuario,
         setNombreUsuario,
         setRolUsuario,
-        setCorreoUsuario, // ✅
+        setCorreoUsuario,
         buscarUsuarioPorCorreo,
         addTramite,
         addTipoTramite,

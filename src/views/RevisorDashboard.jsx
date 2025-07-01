@@ -1,4 +1,3 @@
-// src/components/RevisorDashboard.jsx
 import { useState, useEffect } from "react";
 import { useTramites } from "../context/TramitesContext";
 import Navbar from "../components/Navbar";
@@ -19,46 +18,13 @@ const formatearFecha = (fechaIso) => {
     minute: "2-digit",
     hour12: false,
   };
-  const partes = new Intl.DateTimeFormat("es-MX", opciones).formatToParts(
-    fecha
-  );
-  const getPart = (type) =>
-    partes.find((p) => p.type === type)?.value.padStart(2, "0");
-  const dia = getPart("day");
-  const mes = getPart("month");
-  const año = getPart("year");
-  const hora = getPart("hour");
-  const minuto = getPart("minute");
-  return `${dia}/${mes}/${año} ${hora}:${minuto}`;
-};
-
-const obtenerFechaCDMX = () => {
-  const fecha = new Date();
-  const opciones = {
-    timeZone: "America/Mexico_City",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  };
-  const partes = new Intl.DateTimeFormat("es-MX", opciones).formatToParts(
-    fecha
-  );
-  const getPart = (type) =>
-    partes.find((p) => p.type === type)?.value.padStart(2, "0");
-  const año = getPart("year");
-  const mes = getPart("month");
-  const dia = getPart("day");
-  const hora = getPart("hour");
-  const minuto = getPart("minute");
-  return `${año}-${mes}-${dia}T${hora}:${minuto}:00`;
+  const partes = new Intl.DateTimeFormat("es-MX", opciones).formatToParts(fecha);
+  const getPart = (type) => partes.find((p) => p.type === type)?.value.padStart(2, "0");
+  return `${getPart("day")}/${getPart("month")}/${getPart("year")} ${getPart("hour")}:${getPart("minute")}`;
 };
 
 const RevisorDashboard = () => {
-  const { tramites, updateTramiteEstado, correoUsuario, rolUsuario } =
-    useTramites();
+  const { tramites, updateTramiteEstado, correoUsuario, rolUsuario } = useTramites();
   const [tramiteSeleccionado, setTramiteSeleccionado] = useState(null);
   const [comentario, setComentario] = useState("");
   const [busqueda, setBusqueda] = useState("");
@@ -68,38 +34,47 @@ const RevisorDashboard = () => {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    const obtenerArea = async () => {
-      console.log("📬 Buscando área para:", correoUsuario); // <--- agrega esto
+    let reintentos = 0;
+    const maxReintentos = 30;
 
+    const esperarCorreoYObtenerArea = async () => {
+      if (!correoUsuario) {
+        console.warn("⏳ Aún no está disponible el correo del usuario... esperando...");
+        if (reintentos < maxReintentos) {
+          reintentos++;
+          setTimeout(esperarCorreoYObtenerArea, 200);
+        } else {
+          console.error("❌ No se pudo obtener el correo después de varios intentos.");
+          setCargando(false);
+        }
+        return;
+      }
+
+      const correoLimpio = correoUsuario.trim().toLowerCase();
+      console.log("📬 Buscando área para:", correoLimpio);
       const { data, error } = await supabase
         .from("usuarios")
         .select("area_id")
-        .eq("correo", correoUsuario)
-        .limit(1);
+        .eq("correo", correoLimpio)
+        .single();
 
-      if (error || !data || data.length === 0) {
-        console.error(
-          "❌ Error al obtener el área del revisor:",
-          error || "Sin datos"
-        );
+      if (error) {
+        console.error("❌ Error al obtener el área:", error.message);
       } else {
-        setAreaRevisor([data[0].area_id]);
+        console.log("✔ Área obtenida:", data.area_id);
+        setAreaRevisor(data.area_id);
       }
 
       setCargando(false);
     };
 
-    obtenerArea();
+    esperarCorreoYObtenerArea();
   }, [correoUsuario]);
 
   const tramitesVisibles =
     rolUsuario === "admin revisor"
       ? tramites
-      : tramites.filter((t) =>
-          Array.isArray(areaRevisor)
-            ? areaRevisor.includes(t.tipo_tramite?.area_id)
-            : t.tipo_tramite?.area_id === areaRevisor
-        );
+      : tramites.filter((t) => t.tipo_tramite?.area_id === areaRevisor);
 
   const handleAprobar = async (id) => {
     await updateTramiteEstado(id, "Aprobado");
@@ -118,32 +93,28 @@ const RevisorDashboard = () => {
     ? [tramiteSeleccionado]
     : tramitesVisibles
         .filter((t) => {
-          if (filtroEstado !== "todos" && t.estado !== filtroEstado)
-            return false;
+          if (filtroEstado !== "todos" && t.estado !== filtroEstado) return false;
           return (
-            (t.folio ?? "")
-              .toString()
-              .toLowerCase()
-              .includes(busqueda.toLowerCase()) ||
-            (t.tipo ?? "")
-              .toString()
-              .toLowerCase()
-              .includes(busqueda.toLowerCase()) ||
-            (t.solicitante ?? "")
-              .toString()
-              .toLowerCase()
-              .includes(busqueda.toLowerCase())
+            (t.folio ?? "").toString().toLowerCase().includes(busqueda.toLowerCase()) ||
+            (t.tipo ?? "").toString().toLowerCase().includes(busqueda.toLowerCase()) ||
+            (t.solicitante ?? "").toString().toLowerCase().includes(busqueda.toLowerCase())
           );
         })
         .sort((a, b) => {
-          if (orden === "recientes")
-            return new Date(b.createdAt) - new Date(a.createdAt);
-          if (orden === "antiguos")
-            return new Date(a.createdAt) - new Date(b.createdAt);
-          if (orden === "tipo")
-            return (a.tipo ?? "").localeCompare(b.tipo ?? "");
+          if (orden === "recientes") return new Date(b.createdAt) - new Date(a.createdAt);
+          if (orden === "antiguos") return new Date(a.createdAt) - new Date(b.createdAt);
+          if (orden === "tipo") return (a.tipo ?? "").localeCompare(b.tipo ?? "");
           return 0;
         });
+
+  if (cargando) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ padding: "2rem", fontWeight: "bold" }}>Cargando trámites...</div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -151,11 +122,7 @@ const RevisorDashboard = () => {
       <div className="revisor-container">
         <h2>Revisión de Trámites</h2>
         <div className="filtros-container">
-          <select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-            className="filtro-select"
-          >
+          <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} className="filtro-select">
             <option value="todos">Todos</option>
             <option value="Pendiente">Pendientes</option>
             <option value="Aprobado">Aprobados</option>
@@ -168,11 +135,7 @@ const RevisorDashboard = () => {
             onChange={(e) => setBusqueda(e.target.value)}
             className="input-busqueda"
           />
-          <select
-            value={orden}
-            onChange={(e) => setOrden(e.target.value)}
-            className="filtro-select"
-          >
+          <select value={orden} onChange={(e) => setOrden(e.target.value)} className="filtro-select">
             <option value="recientes">Más recientes</option>
             <option value="antiguos">Más antiguos</option>
             <option value="tipo">Ordenar por tipo</option>
@@ -199,38 +162,22 @@ const RevisorDashboard = () => {
                 <td>{tramite.solicitante}</td>
                 <td className={`estado ${tramite.estado.toLowerCase()}`}>
                   <div>{tramite.estado}</div>
-                  {tramite.estado === "Rechazado" &&
-                    tramite.comentario_revisor && (
-                      <div
-                        style={{
-                          fontSize: "0.85rem",
-                          marginTop: "4px",
-                          color: "#c53030",
-                        }}
-                      >
-                        <strong>Motivo:</strong> {tramite.comentario_revisor}
-                      </div>
-                    )}
+                  {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
+                    <div style={{ fontSize: "0.85rem", marginTop: "4px", color: "#c53030" }}>
+                      <strong>Motivo:</strong> {tramite.comentario_revisor}
+                    </div>
+                  )}
                 </td>
                 <td>{formatearFecha(tramite.createdAt)}</td>
                 <td>{formatearFecha(tramite.reviewedAt)}</td>
                 <td className="acciones">
-                  <button
-                    className="btn btn-ver"
-                    onClick={() => setTramiteSeleccionado(tramite)}
-                  >
+                  <button className="btn btn-ver" onClick={() => setTramiteSeleccionado(tramite)}>
                     🔎 Ver Detalle
                   </button>
-                  <button
-                    className="btn btn-aprobar"
-                    onClick={() => handleAprobar(tramite.id)}
-                  >
+                  <button className="btn btn-aprobar" onClick={() => handleAprobar(tramite.id)}>
                     ✔ Aprobar
                   </button>
-                  <button
-                    className="btn btn-rechazar"
-                    onClick={() => handleRechazar(tramite.id)}
-                  >
+                  <button className="btn btn-rechazar" onClick={() => handleRechazar(tramite.id)}>
                     ✘ Rechazar
                   </button>
                 </td>
@@ -243,33 +190,18 @@ const RevisorDashboard = () => {
           <div className="modal-detalle">
             <div className="modal-content">
               <h3>Detalles del Trámite</h3>
-              <p>
-                <strong>Folio:</strong> {tramiteSeleccionado.folio}
-              </p>
-              <p>
-                <strong>Tipo:</strong> {tramiteSeleccionado.tipo}
-              </p>
-              <p>
-                <strong>Solicitante:</strong> {tramiteSeleccionado.solicitante}
-              </p>
-              <p>
-                <strong>Estado:</strong> {tramiteSeleccionado.estado}
-              </p>
-              <p>
-                <strong>Fecha Solicitud:</strong>{" "}
-                {formatearFecha(tramiteSeleccionado.createdAt)}
-              </p>
-              <p>
-                <strong>Fecha Revisión:</strong>{" "}
-                {formatearFecha(tramiteSeleccionado.reviewedAt)}
-              </p>
+              <p><strong>Folio:</strong> {tramiteSeleccionado.folio}</p>
+              <p><strong>Tipo:</strong> {tramiteSeleccionado.tipo}</p>
+              <p><strong>Solicitante:</strong> {tramiteSeleccionado.solicitante}</p>
+              <p><strong>Estado:</strong> {tramiteSeleccionado.estado}</p>
+              <p><strong>Fecha Solicitud:</strong> {formatearFecha(tramiteSeleccionado.createdAt)}</p>
+              <p><strong>Fecha Revisión:</strong> {formatearFecha(tramiteSeleccionado.reviewedAt)}</p>
 
-              {tramiteSeleccionado.estado === "Rechazado" &&
-                tramiteSeleccionado.comentario_revisor && (
-                  <div className="comentario-rechazo">
-                    {tramiteSeleccionado.comentario_revisor}
-                  </div>
-                )}
+              {tramiteSeleccionado.estado === "Rechazado" && tramiteSeleccionado.comentario_revisor && (
+                <div className="comentario-rechazo">
+                  {tramiteSeleccionado.comentario_revisor}
+                </div>
+              )}
 
               {tramiteSeleccionado.estado !== "Rechazado" && (
                 <div className="comentario-revisor">
@@ -285,16 +217,10 @@ const RevisorDashboard = () => {
               )}
 
               <div className="acciones-modal">
-                <button
-                  className="btn btn-pdf"
-                  onClick={() => generatePDF(tramiteSeleccionado)}
-                >
+                <button className="btn btn-pdf" onClick={() => generatePDF(tramiteSeleccionado)}>
                   📄 Descargar PDF
                 </button>
-                <button
-                  onClick={() => setTramiteSeleccionado(null)}
-                  className="btn btn-cerrar"
-                >
+                <button className="btn btn-cerrar" onClick={() => setTramiteSeleccionado(null)}>
                   ✖ Cerrar Detalle
                 </button>
               </div>
