@@ -10,7 +10,7 @@ import TramitesTable from "./AdminDashboard/TramitesTable";
 import TiposTramiteGrid from "./AdminDashboard/TiposTramiteGrid";
 import UserManagement from "../components/UserManagement";
 import AreaManagement from "../components/AreaManagement";
-import RoleManagement from "../components/RoleManagement"; // ✅ Nuevo
+import RoleManagement from "../components/RoleManagement";
 import { useAuth } from "../context/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -18,12 +18,13 @@ import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
-  const tramitesCtx = useTramites();
-  const tramites = tramitesCtx?.tramites || [];
-  const tiposTramite = tramitesCtx?.tiposTramite || [];
-  const addTipoTramite = tramitesCtx?.addTipoTramite || (() => {});
-  const updateTipoTramite = tramitesCtx?.updateTipoTramite || (() => {});
-  const deleteTipoTramite = tramitesCtx?.deleteTipoTramite || (() => {});
+  const {
+    tramites = [],
+    tiposTramite = [],
+    addTipoTramite = () => {},
+    updateTipoTramite = () => {},
+    deleteTipoTramite = () => {},
+  } = useTramites();
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [nombreTramite, setNombreTramite] = useState("");
@@ -45,7 +46,7 @@ const AdminDashboard = () => {
   const puedeCrearTramite = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
   const puedeVerTiposTramite = ["admin", "admin_tramites", "admin_revisor"].includes(rol);
   const puedeVerAreas = ["admin", "admin_usuarios"].includes(rol);
-  const puedeVerRoles = ["admin", "admin_usuarios"].includes(rol); // ✅ Nuevo permiso
+  const puedeVerRoles = ["admin", "admin_usuarios"].includes(rol);
 
   const totalTramites = tramites.length;
   const pendientes = tramites.filter((t) => t.estado === "Pendiente").length;
@@ -72,24 +73,30 @@ const AdminDashboard = () => {
 
   const tramitesFiltrados = useMemo(() => {
     let filtrados = [...tramites];
+
     if (filtroEstado !== "todos") {
       filtrados = filtrados.filter((t) => t.estado === filtroEstado);
     }
+
     if (busqueda.trim() !== "") {
       const termino = busqueda.toLowerCase();
       filtrados = filtrados.filter((t) =>
-        (t.tipo ?? "").toLowerCase().includes(termino) ||
-        (t.solicitante ?? "").toLowerCase().includes(termino) ||
-        (t.folio ?? "").toLowerCase().includes(termino)
+        (t.tipo_tramite_nombre || "").toLowerCase().includes(termino) ||
+        (t.solicitante || "").toLowerCase().includes(termino) ||
+        (t.folio?.toString() || "").includes(termino)
       );
     }
+
     if (orden === "recientes") {
       filtrados.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (orden === "antiguos") {
       filtrados.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     } else if (orden === "tipo") {
-      filtrados.sort((a, b) => (a.tipo || "").localeCompare(b.tipo || ""));
+      filtrados.sort((a, b) =>
+        (a.tipo_tramite_nombre || "").localeCompare(b.tipo_tramite_nombre || "")
+      );
     }
+
     return filtrados;
   }, [tramites, filtroEstado, busqueda, orden]);
 
@@ -113,7 +120,7 @@ const AdminDashboard = () => {
         id: uuidv4(),
         nombre: nombreTramite,
         campos: campos,
-        logo_url: logo || null
+        logo_url: logo || null,
       });
       setNombreTramite("");
       setCampos([]);
@@ -231,7 +238,7 @@ const AdminDashboard = () => {
               </select>
               <input
                 type="text"
-                placeholder="Buscar por solicitante o tipo..."
+                placeholder="Buscar por solicitante, tipo o folio..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -242,11 +249,13 @@ const AdminDashboard = () => {
               </select>
             </div>
             <TramitesTable
-              tramites={tramitesFiltrados}
-              displayTramites={displayTramites}
-              handlePageChange={handlePageChange}
-              itemsPerPage={itemsPerPage}
-            />
+  tramites={tramitesFiltrados}
+  displayTramites={displayTramites}
+  handlePageChange={handlePageChange}
+  itemsPerPage={itemsPerPage}
+  currentPage={pageNumber}
+/>
+
           </>
         )}
 

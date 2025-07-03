@@ -17,7 +17,7 @@ export const generatePDF = (tramite) => {
       doc.addImage(logoNR, "PNG", pageWidth - 50, 8, 40, 20);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text("OMIWAVE DESARROLLO HUMANO", pageWidth / 2, 32, { align: "center" });
+      doc.text("OMIWAVE DESARROLLO URBANO", pageWidth / 2, 32, { align: "center" });
     };
 
     // --- Checkbox ---
@@ -232,7 +232,12 @@ export const generatePDF = (tramite) => {
     doc.text("Nombre y firma", (firmaAvisoX1 + firmaAvisoX2) / 2, firmaAvisoY + 5, { align: "center" });
 
     // --- Guardar PDF ---
-    doc.save("Omiwave_Desarrollo_Humano.pdf");
+    const folio = tramite.folio || tramite.id || campos["Expediente"] || "";
+    const now = new Date();
+    const pad = (n) => n.toString().padStart(2, "0");
+    const fechaHora = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const fileName = `Omiwave_Desarrollo_Urbano${folio ? "_" + folio : ""}_${fechaHora}.pdf`;
+    doc.save(fileName);
 
   } else {
     // --- Para otros trámites: html2pdf.js ---
@@ -328,9 +333,15 @@ export const generatePDF = (tramite) => {
 
       element.innerHTML = htmlContent;
 
+      const folio = tramite.folio || tramite.id || "";
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, "0");
+      const fechaHora = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const fileName = `tramite_${tramite.tipo.replace(/\s+/g, "_")}${folio ? "_" + folio : ""}_${fechaHora}.pdf`;
+
       const opt = {
         margin: 0,
-        filename: `tramite_${tramite.tipo.replace(/\s+/g, "_")}.pdf`,
+        filename: fileName,
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: "mm", format: "a4" },
       };

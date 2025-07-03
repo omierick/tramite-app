@@ -1,27 +1,35 @@
-// src/views/AdminDashboard/TramitesTable.jsx
+import React from "react";
 import ReactPaginate from "react-paginate";
-import { generatePDF } from "../../utils/pdfUtils";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import "./TramitesTable.css";
 
-const formatearFecha = (fechaIso) => {
-  const fecha = new Date(fechaIso);
-  const dia = fecha.getDate().toString().padStart(2, "0");
-  const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
-  const año = fecha.getFullYear();
-  const horas = fecha.getHours().toString().padStart(2, "0");
-  const minutos = fecha.getMinutes().toString().padStart(2, "0");
-  return `${dia}/${mes}/${año} ${horas}:${minutos}`;
-};
+const TramitesTable = ({
+  tramites = [],
+  displayTramites = [],
+  handlePageChange,
+  itemsPerPage = 10,
+  currentPage = 0,
+}) => {
+  const pageCount = Math.ceil(tramites.length / itemsPerPage);
 
-const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPage }) => {
-  const handleDescargarPDF = (tramite) => {
-    const tramiteConFechas = {
-      ...tramite,
-      tipo: tramite.tipo,
-      estado: tramite.estado,
-      createdAt: tramite.createdAt || new Date().toISOString(),
-      reviewedAt: new Date().toISOString(),
-    };
-    generatePDF(tramiteConFechas);
+  const exportarPDF = (tramite) => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Resumen del Trámite", 14, 22);
+
+    const fields = Object.entries(tramite.campos || {}).map(([key, value]) => [
+      key,
+      typeof value === "boolean" ? (value ? "Sí" : "No") : value,
+    ]);
+
+    autoTable(doc, {
+      head: [["Campo", "Valor"]],
+      body: fields,
+      startY: 30,
+    });
+
+    doc.save(`tramite_${tramite.folio || tramite.id}.pdf`);
   };
 
   return (
@@ -29,76 +37,88 @@ const TramitesTable = ({ tramites, displayTramites, handlePageChange, itemsPerPa
       <table className="tabla-admin">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Folio</th>
-            <th>Tipo de Trámite</th>
-            <th>Solicitante</th>
-            <th>Estado</th>
-            <th>Fecha de Solicitud</th>
-            <th>Fecha de Revisión</th>
-            <th>Acciones</th>
+            <th>FOLIO</th>
+            <th>TIPO</th>
+            <th>ÁREA</th>
+            <th>SOLICITANTE</th>
+            <th>ESTADO</th>
+            <th>FECHA SOLICITUD</th>
+            <th>FECHA REVISIÓN</th>
+            <th>ACCIONES</th>
           </tr>
         </thead>
         <tbody>
-          {displayTramites.length > 0 ? (
+          {displayTramites.length === 0 ? (
+            <tr>
+              <td colSpan="8">No hay resultados</td>
+            </tr>
+          ) : (
             displayTramites.map((tramite) => (
               <tr key={tramite.id}>
-                <td style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "#888" }}>
-                  {tramite.id}
+                <td>{tramite.folio || tramite.id}</td>
+                <td>{tramite.tipo_tramite_nombre || "Sin tipo"}</td>
+                <td>{tramite.area_nombre || "Sin área"}</td>
+                <td>{tramite.solicitante || "Sin solicitante"}</td>
+                <td className={`estado ${tramite.estado?.toLowerCase()}`}>
+                  {tramite.estado}
+                  {tramite.estado === "Rechazado" &&
+                    tramite.comentario_revisor && (
+                      <div className="comentario-rechazo">
+                        Motivo: {tramite.comentario_revisor}
+                      </div>
+                    )}
                 </td>
-                <td style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
-                  {tramite.folio || "Sin folio"}
+                <td>
+                  {tramite.createdAt
+                    ? new Date(tramite.createdAt).toLocaleString()
+                    : "Sin fecha"}
                 </td>
-                <td>{tramite.tipo}</td>
-                <td>{tramite.solicitante || "No especificado"}</td>
-                <td className={`estado ${tramite.estado?.toLowerCase() || ""}`}>
-                  <strong>{tramite.estado || "Desconocido"}</strong>
-                  {tramite.estado === "Rechazado" && tramite.comentario_revisor && (
-                    <div
-                      style={{
-                        fontSize: "0.8rem",
-                        color: "#c00",
-                        marginTop: "4px",
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      Motivo de Rechazo: {tramite.comentario_revisor}
-                    </div>
-                  )}
+                <td>
+                  {tramite.reviewedAt
+                    ? new Date(tramite.reviewedAt).toLocaleString()
+                    : tramite.estado === "Pendiente"
+                    ? "-"
+                    : "Sin fecha"}
                 </td>
-                <td>{tramite.createdAt ? formatearFecha(tramite.createdAt) : "Sin fecha"}</td>
-                <td>{tramite.reviewedAt ? formatearFecha(tramite.reviewedAt) : "-"}</td>
                 <td>
                   {tramite.estado === "Aprobado" && (
                     <button
                       className="btn-descargar"
-                      onClick={() => handleDescargarPDF(tramite)}
+                      onClick={() => exportarPDF(tramite)}
                     >
-                      Descargar
+                      Descargar 📄
                     </button>
                   )}
                 </td>
               </tr>
             ))
-          ) : (
-            <tr>
-              <td colSpan="8" style={{ textAlign: "center", color: "#888" }}>
-                No se encontraron trámites.
-              </td>
-            </tr>
           )}
         </tbody>
       </table>
 
-      <ReactPaginate
-        previousLabel={"← Anterior"}
-        nextLabel={"Siguiente →"}
-        pageCount={Math.ceil(tramites.length / itemsPerPage)}
-        onPageChange={handlePageChange}
-        containerClassName={"pagination"}
-        activeClassName={"active-page"}
-        disabledClassName={"disabled-page"}
-      />
+      {pageCount > 1 && (
+        <div className="paginacion-container">
+          <ReactPaginate
+            previousLabel={<span className="page-link">&laquo;</span>}
+            nextLabel={<span className="page-link">&raquo;</span>}
+            breakLabel={<span className="page-link">…</span>}
+            onPageChange={handlePageChange}
+            pageCount={pageCount}
+            forcePage={currentPage} // 👈 esto asegura que se resalte la página correcta
+            marginPagesDisplayed={1}
+            pageRangeDisplayed={2}
+            containerClassName="pagination pagination-centered"
+            pageClassName="page-item"
+            pageLinkClassName="page-link"
+            previousClassName="page-item"
+            nextClassName="page-item"
+            breakClassName="page-item"
+            breakLinkClassName="page-link"
+            activeClassName="active-page" // se refleja en el CSS
+            disabledClassName="disabled-page"
+          />
+        </div>
+      )}
     </div>
   );
 };
